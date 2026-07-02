@@ -15,18 +15,24 @@
     <script type="text/babel">
         const DEFAULT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23660000"/><path d="M20 50 L20 30 C20 5, 80 5, 80 30 L80 50 L65 50 L65 70 L55 90 L45 90 L35 70 L35 50 Z" fill="%23141414"/><path d="M30 45 L45 45 L45 65 L55 65 L55 45 L70 45 L70 55 L55 55 L55 75 L45 75 L45 55 L30 55 Z" fill="%23660000"/></svg>`;
         const SUPPORT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 15 L25 35 L25 65 L50 85 L75 65 L75 35 Z" fill="%23dc2626"/><circle cx="50" cy="45" r="10" fill="%23141414"/><path d="M35 70 C 35 55, 65 55, 65 70 Z" fill="%23141414"/></svg>`;
+        const NOTIFY_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 20 C35 20, 30 35, 30 50 L25 70 L75 70 L70 50 C70 35, 65 20, 50 20 Z" fill="%23facc15"/><circle cx="50" cy="80" r="7" fill="%23facc15"/></svg>`;
 
         const initialUsers = [
             { id: 100001, username: "hellwhyworker", password: "123ddEdd", avatar: DEFAULT_AVATAR, email: "", phone: "" } 
         ];
 
-        // --- ДАННЫЕ 100% ПУСТЫЕ ПОД НОЛЬ ---
+        // --- ДАННЫЕ ПУСТЫЕ ПОД НОЛЬ ---
         const mockPurchases = [];
         const mockSales = [];
         const mockFinances = [];
 
+        // Категории для кнопок поддержки
+        const supportCategories = [
+            "🛒 Для покупателей", "🤑 Для продавцов", "💰 Баланс и выплаты", "🔒 Безопасность", "📜 Правила сайта", "🐛 Нашел баг"
+        ];
+
         function App() {
-            // --- ЛОКАЛЬНОЕ ХРАНИЛИЩЕ (Сохраняем данные после F5) ---
+            // --- ЛОКАЛЬНОЕ ХРАНИЛИЩЕ ---
             const [usersDatabase, setUsersDatabase] = React.useState(() => {
                 const saved = localStorage.getItem("hellshop_users");
                 return saved ? JSON.parse(saved) : initialUsers;
@@ -40,11 +46,10 @@
             const [chatMessages, setChatMessages] = React.useState(() => {
                 const saved = localStorage.getItem("hellshop_chats");
                 return saved ? JSON.parse(saved) : [
-                    { sender: "Поддержка", avatar: SUPPORT_AVATAR, text: "Поздравляем с созданием аккаунта в HellShop! Ждём дальнейших покупок! 🖤", time: "Только что" }
+                    { sender: "Бот", avatar: SUPPORT_AVATAR, text: "Бот поддержки HellShop поможет тебе найти ответ на важные вопросы!\n\nНажимай на кнопки ниже, чтобы выбрать тему своего обращения и получить помощь.\n\nУ HellShop нет поддержки в Telegram, только на сайте.", time: "Система" }
                 ];
             });
 
-            // Сохраняем в память при любом изменении
             React.useEffect(() => { localStorage.setItem("hellshop_users", JSON.stringify(usersDatabase)); }, [usersDatabase]);
             React.useEffect(() => { 
                 if (currentUser) localStorage.setItem("hellshop_currentUser", JSON.stringify(currentUser));
@@ -55,6 +60,8 @@
             // --------------------------------------------------------
 
             const [activePage, setActivePage] = React.useState("main"); 
+            const [activeChat, setActiveChat] = React.useState("support"); // support или notifications
+            
             const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
             const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
@@ -63,12 +70,19 @@
             const [inputPassword, setInputPassword] = React.useState("");
             const [typedMessage, setTypedMessage] = React.useState("");
 
-            const handleSendMessage = () => {
-                if (!typedMessage.trim()) return;
+            // Моковые уведомления (чисто визуал)
+            const notifications = [
+                { id: 1, type: "success", title: "Выплата", text: "Ваша выплата успешно проведена.\nСумма отправлена на указанные реквизиты.", amount: "- 7 200 ₽", method: "СБП", time: "20:50" },
+                { id: 2, type: "error", title: "Ошибка выплаты", text: "Произошла ошибка при совершении выплаты.\nСредства возвращены на ваш баланс. Вы можете поставить выплату повторно.", amount: "- 7 200 ₽", method: "Зарубежная карта", time: "11:05" },
+                { id: 3, type: "info", title: "Новый заказ", text: "У вас купили товар «Standoff 2, Услуги».\nОжидайте сообщения от покупателя или свяжитесь с ним первым.", amount: "+ 1.00 ₽", method: "Внутренний баланс", time: "Вчера" }
+            ];
+
+            const handleSendMessage = (text = typedMessage) => {
+                if (!text.trim()) return;
                 const newMsg = {
                     sender: currentUser ? currentUser.username : "Вы",
                     avatar: currentUser ? currentUser.avatar : DEFAULT_AVATAR,
-                    text: typedMessage,
+                    text: text,
                     time: "Только что"
                 };
                 setChatMessages([...chatMessages, newMsg]);
@@ -185,7 +199,7 @@
                                 {activePage === "main" && (
                                     <div>
                                         <h1 style={{ borderLeft: "4px solid #dc2626", paddingLeft: "15px", margin: 0 }}>Главная</h1>
-                                        <p style={{ color: "#888", marginTop: "15px" }}>Добро пожаловать в HellShop! Теперь авторизация и чаты сохраняются даже после перезагрузки страницы.</p>
+                                        <p style={{ color: "#888", marginTop: "15px" }}>Добро пожаловать в HellShop! Зайди в "Сообщения", чтобы проверить систему уведомлений и кнопок поддержки.</p>
                                     </div>
                                 )}
 
@@ -213,18 +227,38 @@
                                 )}
 
                                 {activePage === "messages" && (
-                                    <div style={{ display: "flex", border: "1px solid #333", borderRadius: "8px", height: "650px", backgroundColor: "#141414", overflow: "hidden" }}>
+                                    <div style={{ display: "flex", border: "1px solid #333", borderRadius: "8px", height: "700px", backgroundColor: "#141414", overflow: "hidden" }}>
                                         {/* СПИСОК ЧАТОВ */}
                                         <div style={{ width: "320px", borderRight: "1px solid #333", overflowY: "auto" }}>
-                                            <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #333" }}>Сообщения</div>
-                                            <div style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: "#1f1f1f" }}>
-                                                <img src={SUPPORT_AVATAR} style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} />
-                                                <div style={{ flex: 1, overflow: "hidden" }}>
-                                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
-                                                        <span style={{ fontWeight: "bold", fontSize: "14px", color: "#fff" }}>Поддержка</span>
+                                            <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #333" }}>Чаты</div>
+                                            
+                                            {/* ЧАТ УВЕДОМЛЕНИЙ */}
+                                            <div onClick={() => setActiveChat("notifications")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "notifications" ? "#1f1f1f" : "transparent", borderBottom: "1px solid #222" }}>
+                                                <div style={{ position: "relative" }}>
+                                                    <img src={NOTIFY_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #facc15" }} />
+                                                    <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>
+                                                </div>
+                                                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                                                        <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Уведомления ✔</span>
+                                                        <span style={{ fontSize: "11px", color: "#666" }}>10 июня</span>
+                                                    </div>
+                                                    <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Ваша выплата успешно...</div>
+                                                </div>
+                                            </div>
+
+                                            {/* ЧАТ ПОДДЕРЖКИ */}
+                                            <div onClick={() => setActiveChat("support")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "support" ? "#1f1f1f" : "transparent", borderBottom: "1px solid #222" }}>
+                                                <div style={{ position: "relative" }}>
+                                                    <img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} />
+                                                    <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>
+                                                </div>
+                                                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                                                        <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Поддержка ✔</span>
                                                         <span style={{ fontSize: "11px", color: "#666" }}>Сейчас</span>
                                                     </div>
-                                                    <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Поздравляем с созданием аккаунта...</div>
+                                                    <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Бот поддержки поможет...</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -233,40 +267,87 @@
                                         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                                             <div style={{ padding: "15px 20px", borderBottom: "1px solid #333", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                                                    <img src={SUPPORT_AVATAR} style={{ width: "40px", height: "40px", borderRadius: "50%", border: "1px solid #dc2626" }} />
+                                                    <img src={activeChat === "notifications" ? NOTIFY_AVATAR : SUPPORT_AVATAR} style={{ width: "40px", height: "40px", borderRadius: "50%", border: activeChat === "notifications" ? "1px solid #facc15" : "1px solid #dc2626" }} />
                                                     <div>
-                                                        <div style={{ fontWeight: "bold", color: "#dc2626" }}>Поддержка HellShop</div>
-                                                        <div style={{ fontSize: "12px", color: "#4ade80" }}>Онлайн</div>
+                                                        <div style={{ fontWeight: "bold", color: activeChat === "notifications" ? "#facc15" : "#dc2626" }}>{activeChat === "notifications" ? "Уведомления ✔" : "Поддержка ✔"}</div>
+                                                        <div style={{ fontSize: "12px", color: "#888" }}>{activeChat === "notifications" ? "Официальный чат" : "Работаем 24/7"}</div>
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             {/* СООБЩЕНИЯ ВНУТРИ ЧАТА */}
                                             <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", fontSize: "14px" }}>
-                                                {chatMessages.map((msg, i) => (
-                                                    <div key={i} style={{ display: "flex", gap: "15px", alignItems: "flex-start", backgroundColor: msg.sender !== "Поддержка" ? "#1f1f1f" : "transparent", padding: msg.sender !== "Поддержка" ? "12px" : "0", borderRadius: "6px" }}>
-                                                        <img src={msg.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover" }} />
-                                                        <div>
-                                                            <span style={{ fontWeight: "bold", color: msg.sender === "Поддержка" ? "#dc2626" : "#fff" }}>{msg.sender}</span>
-                                                            <span style={{ color: "#666", fontSize: "12px", marginLeft: "10px" }}>{msg.time}</span>
-                                                            <p style={{ margin: "5px 0", color: "#ccc", lineHeight: "1.4" }}>{msg.text}</p>
-                                                        </div>
+                                                {activeChat === "notifications" ? (
+                                                    // РЕНДЕР УВЕДОМЛЕНИЙ
+                                                    <div style={{ display: "flex", flexDirection: "column", gap: "25px", maxWidth: "500px", margin: "0 auto", width: "100%" }}>
+                                                        {notifications.map(n => (
+                                                            <div key={n.id}>
+                                                                <div style={{ fontSize: "12px", color: "#888", marginBottom: "5px" }}>Уведомление</div>
+                                                                <div style={{ backgroundColor: "#1f1f1f", padding: "15px", borderRadius: "8px", border: "1px solid #333" }}>
+                                                                    <div style={{ fontWeight: "bold", marginBottom: "10px", color: "#fff" }}>{n.title}</div>
+                                                                    <div style={{ color: "#ccc", whiteSpace: "pre-line", lineHeight: "1.5" }}>{n.text}</div>
+                                                                    <div style={{ textAlign: "right", fontSize: "11px", color: "#666", marginTop: "10px" }}>{n.time}</div>
+                                                                </div>
+                                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px", padding: "0 5px" }}>
+                                                                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                                                        <div style={{ width: "30px", height: "30px", backgroundColor: "#333", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>💰</div>
+                                                                        <div>
+                                                                            <div style={{ color: "#fff", fontWeight: "bold" }}>{n.title}</div>
+                                                                            <div style={{ fontSize: "12px", color: "#888" }}>{n.method}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div style={{ textAlign: "right" }}>
+                                                                        <div style={{ fontWeight: "bold", color: "#fff" }}>{n.amount}</div>
+                                                                        <div style={{ fontSize: "12px", color: n.type === "success" ? "#4ade80" : n.type === "error" ? "#f87171" : "#60a5fa" }}>{n.type === "success" ? "Успешно" : n.type === "error" ? "Ошибка" : "Ожидание"}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
+                                                ) : (
+                                                    // РЕНДЕР ЧАТА ПОДДЕРЖКИ
+                                                    <>
+                                                        {chatMessages.map((msg, i) => (
+                                                            <div key={i} style={{ display: "flex", gap: "15px", alignItems: "flex-start", backgroundColor: msg.sender !== "Бот" ? "#1f1f1f" : "transparent", padding: msg.sender !== "Бот" ? "12px" : "0", borderRadius: "6px" }}>
+                                                                <img src={msg.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover" }} />
+                                                                <div>
+                                                                    <span style={{ fontWeight: "bold", color: msg.sender === "Бот" ? "#dc2626" : "#fff" }}>{msg.sender}</span>
+                                                                    <span style={{ color: "#666", fontSize: "12px", marginLeft: "10px" }}>{msg.time}</span>
+                                                                    <p style={{ margin: "5px 0", color: "#ccc", lineHeight: "1.5", whiteSpace: "pre-line" }}>{msg.text}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        
+                                                        {/* КНОПКИ КАТЕГОРИЙ */}
+                                                        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
+                                                            {supportCategories.map((cat, i) => (
+                                                                <button key={i} onClick={() => handleSendMessage(cat)} style={{ backgroundColor: "#1f1f1f", border: "1px solid #333", color: "#ccc", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "13px", transition: "0.2s" }}>
+                                                                    {cat}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                             
-                                            {/* ПОЛЕ ВВОДА */}
-                                            <div style={{ padding: "15px", borderTop: "1px solid #333", display: "flex", gap: "10px" }}>
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Написать в поддержку..." 
-                                                    value={typedMessage}
-                                                    onChange={(e) => setTypedMessage(e.target.value)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                                    style={{ flex: 1, padding: "12px", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff", borderRadius: "4px", outline: "none" }} 
-                                                />
-                                                <button onClick={handleSendMessage} style={{ padding: "0 25px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Отправить</button>
-                                            </div>
+                                            {/* ПОЛЕ ВВОДА (Только для поддержки) */}
+                                            {activeChat === "support" ? (
+                                                <div style={{ padding: "15px", borderTop: "1px solid #333", display: "flex", gap: "10px" }}>
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Введите сообщение..." 
+                                                        value={typedMessage}
+                                                        onChange={(e) => setTypedMessage(e.target.value)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                                        style={{ flex: 1, padding: "12px", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff", borderRadius: "4px", outline: "none" }} 
+                                                    />
+                                                    <button onClick={() => handleSendMessage()} style={{ padding: "0 25px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Отправить</button>
+                                                </div>
+                                            ) : (
+                                                <div style={{ padding: "15px", borderTop: "1px solid #333", textAlign: "center", color: "#666", fontSize: "13px" }}>
+                                                    Это автоматический чат уведомлений. Вы не можете отправлять сюда сообщения.
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -274,7 +355,7 @@
                         )}
                     </main>
 
-                    {/* МОДАЛКИ */}
+                    {/* МОДАЛКИ (Вход и настройки) */}
                     {isSettingsModalOpen && currentUser && (
                         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                             <div style={{ backgroundColor: "#141414", padding: "30px", borderRadius: "12px", width: "450px", border: "1px solid #dc2626" }}>
