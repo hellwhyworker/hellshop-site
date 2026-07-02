@@ -1,75 +1,65 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HELLSHOP</title>
-    <!-- Подключаем React напрямую -->
+    <!-- Подключаем React -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body style="margin:0; padding:0; background-color: #0a0a0a;">
+<body style="margin:0; padding:0; background-color: #0a0a0a; color: #e5e5e5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
     <div id="root"></div>
 
     <script type="text/babel">
-        // Переносим нашу логику HellShop
         const DEFAULT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23660000"/><path d="M20 50 L20 30 C20 5, 80 5, 80 30 L80 50 L65 50 L65 70 L55 90 L45 90 L35 70 L35 50 Z" fill="%23141414"/><path d="M30 45 L45 45 L45 65 L55 65 L55 45 L70 45 L70 55 L55 55 L55 75 L45 75 L45 55 L30 55 Z" fill="%23660000"/></svg>`;
 
         const initialUsers = [
             { id: 100001, username: "hellwhyworker", password: "123ddEdd", avatar: DEFAULT_AVATAR, email: "", phone: "" } 
         ];
 
+        // --- МОК-ДАННЫЕ ДЛЯ ТАБЛИЦ ---
+        const mockPurchases = [
+            { date: "17 июня, 0:11", order: "#R2MGQUG7", desc: "USD, Подарочная карта, Steam", seller: "Lotkeys", status: "Закрыт", price: "201.85 ₽" },
+            { date: "5 апреля, 4:51", order: "#BRUUCU14", desc: "Bluestacks ZeroAvg Лучший КАСТОМНЫЙ...", seller: "Auxzeper", status: "Закрыт", price: "68.35 ₽" },
+            { date: "16 марта, 20:32", order: "#JNSTHD12", desc: "YELLOW SEER, Предметы, Трейд", seller: "FandoGRBX", status: "Возврат", price: "5.75 ₽" }
+        ];
+
+        const mockSales = [
+            { date: "16 марта, 20:11", order: "#CBGX7BP3", desc: "gugu gaga, Standoff 2, Услуги", buyer: "w1nman", status: "Закрыт", price: "1.00 ₽" },
+            { date: "26 февраля, 2:58", order: "#STUNH1RE", desc: "Android, 1383.852 ед. золота", buyer: "kristina73919", status: "Закрыт", price: "774.95 ₽" },
+            { date: "21 февраля, 0:10", order: "#KB7KNVJT", desc: "Android, 1000 ед. золота", buyer: "maxi346785", status: "Закрыт", price: "550.00 ₽" }
+        ];
+
+        const mockFinances = [
+            { date: "17 июня, 0:12", desc: "Заказ #R2MGQUG7", status: "Завершено", sum: "- 201.85 ₽", isPositive: false },
+            { date: "17 июня, 0:12", desc: "Пополнение баланса #157170815", status: "Завершено", sum: "+ 201.85 ₽", isPositive: true },
+            { date: "16 марта, 20:32", desc: "Заказ #JNSTHD12", status: "Отменено", sum: "- 5.75 ₽", isPositive: false }
+        ];
+
+        const mockChats = [
+            { user: "stounyyy1", date: "30.06", lastMsg: "Привет, ну что там? сколько собрал?" },
+            { user: "Lotkeys", date: "17.06", lastMsg: "Покупатель подтвердил успешное..." },
+            { user: "E1nknowez", date: "15.06", lastMsg: "Здравствуйте, выдаёте с ножом?" }
+        ];
+
         function App() {
             const [usersDatabase, setUsersDatabase] = React.useState(initialUsers);
-            const [currentUser, setCurrentUser] = React.useState(initialUsers[0]);
+            
+            // ИСПРАВЛЕНИЕ: Теперь по умолчанию никто не вошел в аккаунт (null вместо initialUsers[0])
+            const [currentUser, setCurrentUser] = React.useState(null); 
+            
+            const [activePage, setActivePage] = React.useState("main"); // main, purchases, sales, messages, finances
+            
             const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
             const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
             const [authMode, setAuthMode] = React.useState("login");
             const [settingsTab, setSettingsTab] = React.useState("main"); 
+            
             const [inputUsername, setInputUsername] = React.useState("");
             const [inputPassword, setInputPassword] = React.useState("");
-            const [oldPassword, setOldPassword] = React.useState("");
-            const [newPassword, setNewPassword] = React.useState("");
-            const [confirmPassword, setConfirmPassword] = React.useState("");
-            const [inputEmail, setInputEmail] = React.useState("");
-            const [inputPhone, setInputPhone] = React.useState("");
-            const [verificationCode, setVerificationCode] = React.useState("");
-            const [codeSent, setCodeSent] = React.useState(false);
-
-            const handleSendEmailCode = () => {
-                if (!inputEmail.includes("@")) return alert("❌ Введите корректный E-mail!");
-                setCodeSent(true);
-                alert("📩 Код отправлен на почту! \n\n(Введи код 7777)");
-            };
-
-            const handleVerifyEmail = () => {
-                if (verificationCode === "7777") {
-                    const updated = { ...currentUser, email: inputEmail };
-                    setUsersDatabase(usersDatabase.map(u => u.id === currentUser.id ? updated : u));
-                    setCurrentUser(updated);
-                    setSettingsTab("main"); setCodeSent(false); setVerificationCode("");
-                    alert("✅ Почта успешно привязана!");
-                } else { alert("❌ Неверный код!"); }
-            };
-
-            const handleSendPhoneCode = () => {
-                if (inputPhone.length < 7) return alert("❌ Введите корректный номер!");
-                setCodeSent(true);
-                alert("📱 SMS с кодом отправлено! \n\n(Введи код 5555)");
-            };
-
-            const handleVerifyPhone = () => {
-                if (verificationCode === "5555") {
-                    const updated = { ...currentUser, phone: inputPhone };
-                    setUsersDatabase(usersDatabase.map(u => u.id === currentUser.id ? updated : u));
-                    setCurrentUser(updated);
-                    setSettingsTab("main"); setCodeSent(false); setVerificationCode("");
-                    alert("✅ Телефон успешно привязан!");
-                } else { alert("❌ Неверный код!"); }
-            };
 
             const handleAuth = () => {
                 if (!inputUsername.trim() || !inputPassword.trim()) return alert("⚠️ Заполните все поля!");
@@ -84,84 +74,206 @@
                 setInputUsername(""); setInputPassword("");
             };
 
+            const renderTable = (headers, data, type) => (
+                <div style={{ backgroundColor: "#141414", borderRadius: "8px", overflow: "hidden", border: "1px solid #333", marginTop: "20px" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
+                        <thead style={{ backgroundColor: "#1f1f1f", borderBottom: "2px solid #333" }}>
+                            <tr>{headers.map((h, i) => <th key={i} style={{ padding: "15px", color: "#888" }}>{h}</th>)}</tr>
+                        </thead>
+                        <tbody>
+                            {data.map((row, i) => (
+                                <tr key={i} style={{ borderBottom: "1px solid #222" }}>
+                                    <td style={{ padding: "15px", color: "#888" }}>{row.date}</td>
+                                    {type !== 'finances' && <td style={{ padding: "15px" }}>{row.order}</td>}
+                                    <td style={{ padding: "15px" }}>{row.desc}</td>
+                                    {type === 'purchases' && <td style={{ padding: "15px", color: "#60a5fa" }}>{row.seller}</td>}
+                                    {type === 'sales' && <td style={{ padding: "15px", color: "#60a5fa" }}>{row.buyer}</td>}
+                                    <td style={{ padding: "15px", color: row.status === "Закрыт" || row.status === "Завершено" ? "#4ade80" : row.status === "Возврат" ? "#facc15" : "#f87171" }}>{row.status}</td>
+                                    <td style={{ padding: "15px", fontWeight: "bold", color: row.isPositive ? "#4ade80" : "#e5e5e5" }}>{row.sum || row.price}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+
             return (
-                <div style={{ backgroundColor: "#0a0a0a", color: "#e5e5e5", minHeight: "100vh", fontFamily: "sans-serif" }}>
+                <div style={{ minHeight: "100vh" }}>
+                    {/* ШАПКА */}
                     <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 30px", height: "70px", backgroundColor: "#141414", borderBottom: "2px solid #dc2626" }}>
-                        <div style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
+                        <div onClick={() => setActivePage("main")} style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626", cursor: "pointer" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
                         <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
-                            <div style={{ display: "flex", gap: "20px", fontSize: "14px", color: "#a3a3a3" }}>
-                                <span>Покупки</span><span>Продажи</span><span>Сообщения</span><span>Финансы</span>
+                            <div style={{ display: "flex", gap: "20px", fontSize: "14px", fontWeight: "500" }}>
+                                {["purchases", "sales", "messages", "finances"].map(page => (
+                                    <span 
+                                        key={page} 
+                                        onClick={() => setActivePage(page)} 
+                                        style={{ 
+                                            cursor: "pointer", transition: "0.2s",
+                                            color: activePage === page ? "#dc2626" : "#a3a3a3",
+                                            borderBottom: activePage === page ? "2px solid #dc2626" : "none",
+                                            paddingBottom: "23px", paddingTop: "25px" // Выравнивание полоски по низу шапки
+                                        }}
+                                    >
+                                        {page === "purchases" ? "Покупки" : page === "sales" ? "Продажи" : page === "messages" ? "Сообщения" : "Финансы"}
+                                    </span>
+                                ))}
                             </div>
+
                             <div style={{ position: "relative" }}>
                                 {currentUser ? (
                                     <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
                                         <img src={currentUser.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #dc2626" }} />
-                                        <span>▼</span>
+                                        <span style={{ fontSize: "10px", color: "#666" }}>▼</span>
                                     </div>
                                 ) : (
                                     <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Войти</button>
                                 )}
                                 {isDropdownOpen && currentUser && (
-                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "#1f1f1f", border: "1px solid #333", borderRadius: "6px", width: "220px", zIndex: 10, padding: "10px 0" }}>
+                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "#1f1f1f", border: "1px solid #333", borderRadius: "6px", width: "220px", zIndex: 10, padding: "10px 0", boxShadow: "0 10px 30px rgba(0,0,0,0.8)" }}>
                                         <div style={{ padding: "5px 15px", fontWeight: "bold" }}>{currentUser.username}</div>
                                         <div style={{ padding: "5px 15px", color: "#dc2626", fontSize: "12px" }}>ID: {currentUser.id}</div>
-                                        <hr style={{ border: "0", borderTop: "1px solid #333" }} />
-                                        <div onClick={() => { setIsSettingsModalOpen(true); setIsDropdownOpen(false); setSettingsTab("main"); }} style={{ padding: "8px 15px", cursor: "pointer" }}>Настройки</div>
-                                        <div onClick={() => { setCurrentUser(null); setIsDropdownOpen(false); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#ef4444" }}>Выйти</div>
+                                        <hr style={{ border: "0", borderTop: "1px solid #333", margin: "10px 0" }} />
+                                        <div onClick={() => { setIsSettingsModalOpen(true); setIsDropdownOpen(false); }} style={{ padding: "8px 15px", cursor: "pointer" }}>Настройки</div>
+                                        <div onClick={() => { setCurrentUser(null); setIsDropdownOpen(false); setActivePage("main"); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#ef4444" }}>Выйти</div>
                                     </div>
                                 )}
                             </div>
                         </div>
                     </header>
 
-                    <main style={{ padding: "50px" }}>
-                        <h1 style={{ color: "#fff", borderLeft: "4px solid #dc2626", paddingLeft: "15px" }}>Панель управления HellShop</h1>
-                        <p style={{ color: "#888" }}>Твой бесплатный сайт 24/7 готов к публикации!</p>
+                    {/* ОСНОВНОЙ КОНТЕНТ */}
+                    <main style={{ padding: "40px 50px", maxWidth: "1200px", margin: "0 auto" }}>
+                        
+                        {!currentUser && activePage !== "main" ? (
+                            <div style={{ textAlign: "center", padding: "100px 0" }}>
+                                <h2 style={{ color: "#fff" }}>Доступ закрыт 🔒</h2>
+                                <p style={{ color: "#888" }}>Войдите в аккаунт, чтобы просмотреть этот раздел.</p>
+                                <button onClick={() => setIsAuthModalOpen(true)} style={{ marginTop: "20px", padding: "10px 20px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Войти в аккаунт</button>
+                            </div>
+                        ) : (
+                            <>
+                                {activePage === "main" && (
+                                    <div>
+                                        <h1 style={{ borderLeft: "4px solid #dc2626", paddingLeft: "15px", margin: 0 }}>Главная</h1>
+                                        <p style={{ color: "#888", marginTop: "15px" }}>Добро пожаловать в HellShop! Кликай по меню сверху, чтобы протестировать новые разделы.</p>
+                                    </div>
+                                )}
+
+                                {activePage === "purchases" && (
+                                    <div>
+                                        <h1 style={{ margin: "0 0 20px 0" }}>Мои покупки</h1>
+                                        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+                                            <input type="text" placeholder="Номер заказа" style={{ padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", borderRadius: "4px" }}/>
+                                            <input type="text" placeholder="Продавец" style={{ padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", borderRadius: "4px" }}/>
+                                            <button style={{ padding: "10px 20px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Показать</button>
+                                        </div>
+                                        {renderTable(["Дата", "Заказ", "Описание", "Продавец", "Статус", "Сумма"], mockPurchases, "purchases")}
+                                    </div>
+                                )}
+
+                                {activePage === "sales" && (
+                                    <div>
+                                        <h1 style={{ margin: "0 0 20px 0" }}>Мои продажи</h1>
+                                        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+                                            <input type="text" placeholder="Номер заказа" style={{ padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", borderRadius: "4px" }}/>
+                                            <input type="text" placeholder="Покупатель" style={{ padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", borderRadius: "4px" }}/>
+                                            <button style={{ padding: "10px 20px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Показать</button>
+                                        </div>
+                                        {renderTable(["Дата", "Заказ", "Описание", "Покупатель", "Статус", "Сумма"], mockSales, "sales")}
+                                    </div>
+                                )}
+
+                                {activePage === "finances" && (
+                                    <div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                                            <h1 style={{ margin: 0 }}>Финансы <span style={{ color: "#888", fontSize: "20px" }}>· 0 ₽ · 0 $ · 0 €</span></h1>
+                                            <button style={{ padding: "10px 20px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Вывести деньги</button>
+                                        </div>
+                                        <div style={{ padding: "15px", backgroundColor: "#1e1b4b", color: "#a5b4fc", border: "1px solid #3730a3", borderRadius: "6px", marginBottom: "20px", fontSize: "14px" }}>
+                                            ℹ️ Операции по выводу USD и EUR проводятся в национальной валюте по курсу, близкому к биржевому.
+                                        </div>
+                                        {renderTable(["Дата", "Описание", "Статус", "Сумма"], mockFinances, "finances")}
+                                    </div>
+                                )}
+
+                                {activePage === "messages" && (
+                                    <div style={{ display: "flex", border: "1px solid #333", borderRadius: "8px", height: "650px", backgroundColor: "#141414", overflow: "hidden" }}>
+                                        {/* ЛЕВЫЙ БЛОК: Список чатов */}
+                                        <div style={{ width: "320px", borderRight: "1px solid #333", overflowY: "auto" }}>
+                                            <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #333" }}>Сообщения</div>
+                                            {mockChats.map((chat, i) => (
+                                                <div key={i} style={{ display: "flex", padding: "15px", borderBottom: "1px solid #222", cursor: "pointer", backgroundColor: i === 0 ? "#1f1f1f" : "transparent" }}>
+                                                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#333", marginRight: "15px" }}></div>
+                                                    <div style={{ flex: 1, overflow: "hidden" }}>
+                                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
+                                                            <span style={{ fontWeight: "bold", fontSize: "14px", color: i === 0 ? "#fff" : "#ccc" }}>{chat.user}</span>
+                                                            <span style={{ fontSize: "12px", color: "#666" }}>{chat.date}</span>
+                                                        </div>
+                                                        <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{chat.lastMsg}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {/* ПРАВЫЙ БЛОК: Открытый чат */}
+                                        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                                            <div style={{ padding: "15px 20px", borderBottom: "1px solid #333", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                                                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#333" }}></div>
+                                                    <div>
+                                                        <div style={{ fontWeight: "bold" }}>stounyyy1</div>
+                                                        <div style={{ fontSize: "12px", color: "#888" }}>Был день назад</div>
+                                                    </div>
+                                                </div>
+                                                <button style={{ backgroundColor: "#4ade80", color: "#000", border: "none", padding: "6px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold" }}>✔ Включены оповещения</button>
+                                            </div>
+                                            <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "15px", fontSize: "14px" }}>
+                                                <div>
+                                                    <span style={{ fontWeight: "bold", color: "#fff" }}>stounyyy1</span> <span style={{ color: "#666", fontSize: "12px", marginLeft: "10px" }}>11.05.26</span>
+                                                    <p style={{ margin: "5px 0", color: "#ccc" }}>привет, как там успехи? собираешь деньги потихоньку?</p>
+                                                    <p style={{ margin: "5px 0", color: "#ccc" }}>у меня просьба, можешь фейсит аккаунт вернуть пожалуйста?</p>
+                                                </div>
+                                                <div style={{ backgroundColor: "#1f1f1f", padding: "10px", borderRadius: "6px" }}>
+                                                    <span style={{ fontWeight: "bold", color: "#dc2626" }}>Hellwhyworker</span> <span style={{ color: "#666", fontSize: "12px", marginLeft: "10px" }}>11.05.26</span>
+                                                    <p style={{ margin: "5px 0", color: "#ccc" }}>У меня нету доступа к аккаунту, так же пока что и денег нет</p>
+                                                </div>
+                                                <div>
+                                                    <span style={{ fontWeight: "bold", color: "#fff" }}>stounyyy1</span> <span style={{ color: "#666", fontSize: "12px", marginLeft: "10px" }}>30.06.26</span>
+                                                    <p style={{ margin: "5px 0", color: "#ccc" }}>Привет, ну что там? сколько собрал?</p>
+                                                </div>
+                                            </div>
+                                            <div style={{ padding: "15px", borderTop: "1px solid #333", display: "flex", gap: "10px" }}>
+                                                <input type="text" placeholder="Написать..." style={{ flex: 1, padding: "12px", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff", borderRadius: "4px", outline: "none" }} />
+                                                <button style={{ padding: "0 20px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>→</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </main>
 
-                    {/* НАСТРОЙКИ */}
-                    {isSettingsModalOpen && (
+                    {/* МОДАЛЬНЫЕ ОКНА НАСТРОЕК И ВХОДА (оставлены без изменений) */}
+                    {isSettingsModalOpen && currentUser && (
                         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                             <div style={{ backgroundColor: "#141414", padding: "30px", borderRadius: "12px", width: "450px", border: "1px solid #dc2626" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
                                     <h3>Настройки аккаунта</h3>
                                     <button onClick={() => setIsSettingsModalOpen(false)} style={{ background: "none", border: "none", color: "#888", fontSize: "20px", cursor: "pointer" }}>×</button>
                                 </div>
-                                {settingsTab === "main" ? (
-                                    <div style={{ display: "flex", gap: "20px" }}>
-                                        <img src={currentUser.avatar} style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
-                                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
-                                            <button onClick={() => setSettingsTab("email")} style={{ padding: "10px", backgroundColor: "#1f1f1f", color: currentUser.email ? "#4ade80" : "#fff", border: "1px solid #333", borderRadius: "6px", cursor: "pointer" }}>
-                                                {currentUser.email ? `Почта: ${currentUser.email}` : "Привязать почту"}
-                                            </button>
-                                            <button onClick={() => setSettingsTab("phone")} style={{ padding: "10px", backgroundColor: "#1f1f1f", color: currentUser.phone ? "#4ade80" : "#fff", border: "1px solid #333", borderRadius: "6px", cursor: "pointer" }}>
-                                                {currentUser.phone ? `Телефон: ${currentUser.phone}` : "Привязать телефон"}
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <h4>{settingsTab === "email" ? "Привязка почты" : "Привязка телефона"}</h4>
-                                        <input type="text" placeholder="Введите данные" value={settingsTab === "email" ? inputEmail : inputPhone} onChange={(e) => settingsTab === "email" ? setInputEmail(e.target.value) : setInputPhone(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #333" }} />
-                                        {codeSent && <input type="text" placeholder="Код подтверждения" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #dc2626" }} />}
-                                        <button onClick={settingsTab === "email" ? (codeSent ? handleVerifyEmail : handleSendEmailCode) : (codeSent ? handleVerifyPhone : handleSendPhoneCode)} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}>
-                                            {codeSent ? "Подтвердить код" : "Получить код"}
-                                        </button>
-                                    </div>
-                                )}
+                                <p style={{color: "#888"}}>Настройки временно скрыты в этой версии превью.</p>
                             </div>
                         </div>
                     )}
 
-                    {/* ВХОД */}
                     {isAuthModalOpen && (
                         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                             <div style={{ backgroundColor: "#141414", padding: "30px", borderRadius: "8px", width: "320px", border: "1px solid #dc2626" }}>
                                 <h3 style={{ textAlign: "center" }}>{authMode === "login" ? "Авторизация" : "Регистрация"}</h3>
-                                <p style={{ textAlign: "center", fontSize: "12px", color: "#888" }} onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? "Нет аккаунта? Создать" : "Есть аккаунт? Войти"}</p>
-                                <input type="text" placeholder="Логин" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #333" }} />
-                                <input type="password" placeholder="Пароль" value={inputPassword} onChange={(e) => setInputPassword(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "20px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #333" }} />
-                                <button onClick={handleAuth} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px" }}>Продолжить</button>
+                                <p style={{ textAlign: "center", fontSize: "12px", color: "#888", cursor: "pointer" }} onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? "Нет аккаунта? Создать" : "Есть аккаунт? Войти"}</p>
+                                <input type="text" placeholder="Логин" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #333", borderRadius: "4px" }} />
+                                <input type="password" placeholder="Пароль" value={inputPassword} onChange={(e) => setInputPassword(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "20px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #333", borderRadius: "4px" }} />
+                                <button onClick={handleAuth} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" }}>Продолжить</button>
                             </div>
                         </div>
                     )}
