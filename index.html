@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HELLSHOP</title>
-    <!-- Подключаем React -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -25,11 +24,11 @@
         const mockPurchases = [];
         const mockSales = [];
         const mockFinances = [];
+        const notifications = []; // Уведомления теперь тоже абсолютно пустые
 
-        // Категории для кнопок поддержки
-        const supportCategories = [
-            "🛒 Для покупателей", "🤑 Для продавцов", "💰 Баланс и выплаты", "🔒 Безопасность", "📜 Правила сайта", "🐛 Нашел баг"
-        ];
+        // Категории кнопок для бота
+        const mainCategories = ["🛒 Для покупателей", "🤑 Для продавцов", "💰 Баланс и выплаты", "🔒 Безопасность", "📜 Правила сайта", "🐛 Нашел баг"];
+        const buyerCategories = ["🔙 Назад", "❓ Как проходит сделка?", "📦 Способы получения", "💬 Чат с продавцом", "💡 Советы", "💳 Оплата товаров", "✅ Гарантии и возврат", "⭐ Отзывы"];
 
         function App() {
             // --- ЛОКАЛЬНОЕ ХРАНИЛИЩЕ ---
@@ -50,17 +49,23 @@
                 ];
             });
 
+            const [supportMenu, setSupportMenu] = React.useState(() => {
+                const saved = localStorage.getItem("hellshop_supportMenu");
+                return saved ? saved : "main";
+            });
+
             React.useEffect(() => { localStorage.setItem("hellshop_users", JSON.stringify(usersDatabase)); }, [usersDatabase]);
             React.useEffect(() => { 
                 if (currentUser) localStorage.setItem("hellshop_currentUser", JSON.stringify(currentUser));
                 else localStorage.removeItem("hellshop_currentUser");
             }, [currentUser]);
             React.useEffect(() => { localStorage.setItem("hellshop_chats", JSON.stringify(chatMessages)); }, [chatMessages]);
+            React.useEffect(() => { localStorage.setItem("hellshop_supportMenu", supportMenu); }, [supportMenu]);
 
             // --------------------------------------------------------
 
             const [activePage, setActivePage] = React.useState("main"); 
-            const [activeChat, setActiveChat] = React.useState("support"); // support или notifications
+            const [activeChat, setActiveChat] = React.useState("support"); 
             
             const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
@@ -70,23 +75,75 @@
             const [inputPassword, setInputPassword] = React.useState("");
             const [typedMessage, setTypedMessage] = React.useState("");
 
-            // Моковые уведомления (чисто визуал)
-            const notifications = [
-                { id: 1, type: "success", title: "Выплата", text: "Ваша выплата успешно проведена.\nСумма отправлена на указанные реквизиты.", amount: "- 7 200 ₽", method: "СБП", time: "20:50" },
-                { id: 2, type: "error", title: "Ошибка выплаты", text: "Произошла ошибка при совершении выплаты.\nСредства возвращены на ваш баланс. Вы можете поставить выплату повторно.", amount: "- 7 200 ₽", method: "Зарубежная карта", time: "11:05" },
-                { id: 3, type: "info", title: "Новый заказ", text: "У вас купили товар «Standoff 2, Услуги».\nОжидайте сообщения от покупателя или свяжитесь с ним первым.", amount: "+ 1.00 ₽", method: "Внутренний баланс", time: "Вчера" }
-            ];
-
             const handleSendMessage = (text = typedMessage) => {
                 if (!text.trim()) return;
+
+                // Если нажали назад, просто меняем меню, сообщение не отправляем
+                if (text === "🔙 Назад") {
+                    setSupportMenu("main");
+                    return;
+                }
+
+                // 1. Добавляем сообщение пользователя
                 const newMsg = {
                     sender: currentUser ? currentUser.username : "Вы",
                     avatar: currentUser ? currentUser.avatar : DEFAULT_AVATAR,
                     text: text,
                     time: "Только что"
                 };
-                setChatMessages([...chatMessages, newMsg]);
+                let updatedMessages = [...chatMessages, newMsg];
                 setTypedMessage("");
+
+                // 2. Логика автоответов бота
+                let botReplyText = "";
+                let newMenu = supportMenu;
+
+                // Ответы для главного меню
+                if (text === "🛒 Для покупателей") {
+                    botReplyText = "HellShop — это маркетплейс, где продавцы предлагают товары, а покупатели совершают покупки. Все объявления о товарах проходят проверку. У нас более 100.000 товаров по 400+ играм и приложениям.\n\nКак купить товар?\n1️⃣ Нажмите «Купить» на странице объявления о товаре;\n2️⃣ Выберите способ оплаты или используйте баланс на сайте;\n3️⃣ Следуйте инструкции на странице сделки.\n\nВозникли вопросы? Воспользуйтесь 🤖 Ботом, выбрав категорию ниже!";
+                    newMenu = "buyers";
+                } else if (text === "🤑 Для продавцов") {
+                    botReplyText = "Хотите начать продавать на HellShop?\n1. Зарегистрируйтесь на сайте.\n2. Перейдите в раздел продаж и создайте объявление.\n3. Ожидайте покупателей и зарабатывайте реальные деньги!";
+                } else if (text === "💰 Баланс и выплаты") {
+                    botReplyText = "Все операции по балансу прозрачны. Выплаты заработанных средств производятся на банковские карты, кошельки и криптовалюту в срок от 5 минут до 24 часов.";
+                } else if (text === "🔒 Безопасность") {
+                    botReplyText = "Ваши средства надежно защищены системой безопасных сделок. Главное правило: НИКОГДА не переходите в Telegram или Discord для проведения сделки. Общайтесь только в чате HellShop.";
+                } else if (text === "📜 Правила сайта") {
+                    botReplyText = "Пожалуйста, общайтесь вежливо и проводите сделки строго внутри платформы HellShop. Нарушение правил грозит вечной блокировкой аккаунта.";
+                } else if (text === "🐛 Нашел баг") {
+                    botReplyText = "Спасибо за бдительность! Опишите найденную ошибку в этом чате, и наши разработчики постараются исправить её как можно скорее.";
+                } 
+                // Ответы для меню покупателей
+                else if (text === "❓ Как проходит сделка?") {
+                    botReplyText = "Сделка проходит очень просто и безопасно:\n1️⃣ Вы оплачиваете товар (деньги резервируются на сайте).\n2️⃣ Продавец выдаёт вам товар или услугу.\n3️⃣ Вы проверяете товар и подтверждаете заказ.\nДеньги поступят продавцу только после вашего подтверждения!";
+                } else if (text === "📦 Способы получения") {
+                    botReplyText = "В зависимости от товара, получение может быть:\n• Автоматическим (данные выдаются сразу после оплаты)\n• Через передачу в самой игре (трейд)\n• Передачей данных от аккаунта лично в чате с продавцом.";
+                } else if (text === "💬 Чат с продавцом") {
+                    botReplyText = "Сразу после оплаты заказа у вас автоматически откроется приватный чат с продавцом. Именно там вы сможете обсудить все детали получения товара.";
+                } else if (text === "💡 Советы") {
+                    botReplyText = "Наш главный совет: снимайте процесс покупки и получения товара на видео. В случае возникновения спорных ситуаций это поможет нам вернуть ваши деньги на 100%.";
+                } else if (text === "💳 Оплата товаров") {
+                    botReplyText = "Мы принимаем банковские карты РФ и мира, СБП, электронные кошельки и криптовалюту. Просто выберите удобный способ на этапе оформления заказа.";
+                } else if (text === "✅ Гарантии и возврат") {
+                    botReplyText = "Если продавец не выходит на связь, не выдал товар или он оказался нерабочим — вы сможете открыть спор. Мы разберемся в ситуации и вернем деньги вам на баланс.";
+                } else if (text === "⭐ Отзывы") {
+                    botReplyText = "После успешного завершения сделки не забудьте оставить отзыв продавцу! Это помогает другим покупателям найти честных людей на нашей площадке.";
+                }
+
+                // 3. Отправка ответа бота
+                if (botReplyText) {
+                    updatedMessages.push({
+                        sender: "Бот",
+                        avatar: SUPPORT_AVATAR,
+                        text: botReplyText,
+                        time: "Только что"
+                    });
+                }
+
+                setChatMessages(updatedMessages);
+                if (newMenu !== supportMenu) {
+                    setSupportMenu(newMenu);
+                }
             };
 
             const handleAuth = () => {
@@ -139,6 +196,8 @@
                     </table>
                 </div>
             );
+
+            const activeButtons = supportMenu === "main" ? mainCategories : buyerCategories;
 
             return (
                 <div style={{ minHeight: "100vh" }}>
@@ -199,7 +258,7 @@
                                 {activePage === "main" && (
                                     <div>
                                         <h1 style={{ borderLeft: "4px solid #dc2626", paddingLeft: "15px", margin: 0 }}>Главная</h1>
-                                        <p style={{ color: "#888", marginTop: "15px" }}>Добро пожаловать в HellShop! Зайди в "Сообщения", чтобы проверить систему уведомлений и кнопок поддержки.</p>
+                                        <p style={{ color: "#888", marginTop: "15px" }}>Добро пожаловать в HellShop! Зайди в "Сообщения", чтобы протестировать умного бота и систему уведомлений.</p>
                                     </div>
                                 )}
 
@@ -241,9 +300,9 @@
                                                 <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
                                                         <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Уведомления ✔</span>
-                                                        <span style={{ fontSize: "11px", color: "#666" }}>10 июня</span>
+                                                        <span style={{ fontSize: "11px", color: "#666" }}>Система</span>
                                                     </div>
-                                                    <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Ваша выплата успешно...</div>
+                                                    <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{notifications.length > 0 ? "Новое уведомление" : "Нет новых уведомлений"}</div>
                                                 </div>
                                             </div>
 
@@ -278,31 +337,9 @@
                                             {/* СООБЩЕНИЯ ВНУТРИ ЧАТА */}
                                             <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", fontSize: "14px" }}>
                                                 {activeChat === "notifications" ? (
-                                                    // РЕНДЕР УВЕДОМЛЕНИЙ
-                                                    <div style={{ display: "flex", flexDirection: "column", gap: "25px", maxWidth: "500px", margin: "0 auto", width: "100%" }}>
-                                                        {notifications.map(n => (
-                                                            <div key={n.id}>
-                                                                <div style={{ fontSize: "12px", color: "#888", marginBottom: "5px" }}>Уведомление</div>
-                                                                <div style={{ backgroundColor: "#1f1f1f", padding: "15px", borderRadius: "8px", border: "1px solid #333" }}>
-                                                                    <div style={{ fontWeight: "bold", marginBottom: "10px", color: "#fff" }}>{n.title}</div>
-                                                                    <div style={{ color: "#ccc", whiteSpace: "pre-line", lineHeight: "1.5" }}>{n.text}</div>
-                                                                    <div style={{ textAlign: "right", fontSize: "11px", color: "#666", marginTop: "10px" }}>{n.time}</div>
-                                                                </div>
-                                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px", padding: "0 5px" }}>
-                                                                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                                                        <div style={{ width: "30px", height: "30px", backgroundColor: "#333", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>💰</div>
-                                                                        <div>
-                                                                            <div style={{ color: "#fff", fontWeight: "bold" }}>{n.title}</div>
-                                                                            <div style={{ fontSize: "12px", color: "#888" }}>{n.method}</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div style={{ textAlign: "right" }}>
-                                                                        <div style={{ fontWeight: "bold", color: "#fff" }}>{n.amount}</div>
-                                                                        <div style={{ fontSize: "12px", color: n.type === "success" ? "#4ade80" : n.type === "error" ? "#f87171" : "#60a5fa" }}>{n.type === "success" ? "Успешно" : n.type === "error" ? "Ошибка" : "Ожидание"}</div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ))}
+                                                    // РЕНДЕР УВЕДОМЛЕНИЙ (сейчас пустой)
+                                                    <div style={{ display: "flex", flexDirection: "column", gap: "25px", maxWidth: "500px", margin: "0 auto", width: "100%", textAlign: "center", color: "#666", paddingTop: "50px" }}>
+                                                        У вас пока нет системных уведомлений. Здесь будет появляться информация о ваших покупках, продажах и выплатах.
                                                     </div>
                                                 ) : (
                                                     // РЕНДЕР ЧАТА ПОДДЕРЖКИ
@@ -320,7 +357,7 @@
                                                         
                                                         {/* КНОПКИ КАТЕГОРИЙ */}
                                                         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
-                                                            {supportCategories.map((cat, i) => (
+                                                            {activeButtons.map((cat, i) => (
                                                                 <button key={i} onClick={() => handleSendMessage(cat)} style={{ backgroundColor: "#1f1f1f", border: "1px solid #333", color: "#ccc", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "13px", transition: "0.2s" }}>
                                                                     {cat}
                                                                 </button>
