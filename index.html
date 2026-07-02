@@ -1,1 +1,176 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLSHOP</title>
+    <!-- Подключаем React напрямую -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body style="margin:0; padding:0; background-color: #0a0a0a;">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Переносим нашу логику HellShop
+        const DEFAULT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23660000"/><path d="M20 50 L20 30 C20 5, 80 5, 80 30 L80 50 L65 50 L65 70 L55 90 L45 90 L35 70 L35 50 Z" fill="%23141414"/><path d="M30 45 L45 45 L45 65 L55 65 L55 45 L70 45 L70 55 L55 55 L55 75 L45 75 L45 55 L30 55 Z" fill="%23660000"/></svg>`;
+
+        const initialUsers = [
+            { id: 100001, username: "hellwhyworker", password: "123ddEdd", avatar: DEFAULT_AVATAR, email: "", phone: "" } 
+        ];
+
+        function App() {
+            const [usersDatabase, setUsersDatabase] = React.useState(initialUsers);
+            const [currentUser, setCurrentUser] = React.useState(initialUsers[0]);
+            const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+            const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+            const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
+            const [authMode, setAuthMode] = React.useState("login");
+            const [settingsTab, setSettingsTab] = React.useState("main"); 
+            const [inputUsername, setInputUsername] = React.useState("");
+            const [inputPassword, setInputPassword] = React.useState("");
+            const [oldPassword, setOldPassword] = React.useState("");
+            const [newPassword, setNewPassword] = React.useState("");
+            const [confirmPassword, setConfirmPassword] = React.useState("");
+            const [inputEmail, setInputEmail] = React.useState("");
+            const [inputPhone, setInputPhone] = React.useState("");
+            const [verificationCode, setVerificationCode] = React.useState("");
+            const [codeSent, setCodeSent] = React.useState(false);
+
+            const handleSendEmailCode = () => {
+                if (!inputEmail.includes("@")) return alert("❌ Введите корректный E-mail!");
+                setCodeSent(true);
+                alert("📩 Код отправлен на почту! \n\n(Введи код 7777)");
+            };
+
+            const handleVerifyEmail = () => {
+                if (verificationCode === "7777") {
+                    const updated = { ...currentUser, email: inputEmail };
+                    setUsersDatabase(usersDatabase.map(u => u.id === currentUser.id ? updated : u));
+                    setCurrentUser(updated);
+                    setSettingsTab("main"); setCodeSent(false); setVerificationCode("");
+                    alert("✅ Почта успешно привязана!");
+                } else { alert("❌ Неверный код!"); }
+            };
+
+            const handleSendPhoneCode = () => {
+                if (inputPhone.length < 7) return alert("❌ Введите корректный номер!");
+                setCodeSent(true);
+                alert("📱 SMS с кодом отправлено! \n\n(Введи код 5555)");
+            };
+
+            const handleVerifyPhone = () => {
+                if (verificationCode === "5555") {
+                    const updated = { ...currentUser, phone: inputPhone };
+                    setUsersDatabase(usersDatabase.map(u => u.id === currentUser.id ? updated : u));
+                    setCurrentUser(updated);
+                    setSettingsTab("main"); setCodeSent(false); setVerificationCode("");
+                    alert("✅ Телефон успешно привязан!");
+                } else { alert("❌ Неверный код!"); }
+            };
+
+            const handleAuth = () => {
+                if (!inputUsername.trim() || !inputPassword.trim()) return alert("⚠️ Заполните все поля!");
+                if (authMode === "register") {
+                    if (usersDatabase.find(u => u.username === inputUsername)) return alert("❌ Ник занят!");
+                    const newUser = { id: 100000 + usersDatabase.length + 1, username: inputUsername, password: inputPassword, avatar: DEFAULT_AVATAR, email: "", phone: "" };
+                    setUsersDatabase([...usersDatabase, newUser]); setCurrentUser(newUser); setIsAuthModalOpen(false);
+                } else {
+                    const user = usersDatabase.find(u => u.username === inputUsername && u.password === inputPassword);
+                    if (user) { setCurrentUser(user); setIsAuthModalOpen(false); } else { alert("❌ Неверный логин или пароль!"); }
+                }
+                setInputUsername(""); setInputPassword("");
+            };
+
+            return (
+                <div style={{ backgroundColor: "#0a0a0a", color: "#e5e5e5", minHeight: "100vh", fontFamily: "sans-serif" }}>
+                    <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 30px", height: "70px", backgroundColor: "#141414", borderBottom: "2px solid #dc2626" }}>
+                        <div style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
+                            <div style={{ display: "flex", gap: "20px", fontSize: "14px", color: "#a3a3a3" }}>
+                                <span>Покупки</span><span>Продажи</span><span>Сообщения</span><span>Финансы</span>
+                            </div>
+                            <div style={{ position: "relative" }}>
+                                {currentUser ? (
+                                    <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                                        <img src={currentUser.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #dc2626" }} />
+                                        <span>▼</span>
+                                    </div>
+                                ) : (
+                                    <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Войти</button>
+                                )}
+                                {isDropdownOpen && currentUser && (
+                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "#1f1f1f", border: "1px solid #333", borderRadius: "6px", width: "220px", zIndex: 10, padding: "10px 0" }}>
+                                        <div style={{ padding: "5px 15px", fontWeight: "bold" }}>{currentUser.username}</div>
+                                        <div style={{ padding: "5px 15px", color: "#dc2626", fontSize: "12px" }}>ID: {currentUser.id}</div>
+                                        <hr style={{ border: "0", borderTop: "1px solid #333" }} />
+                                        <div onClick={() => { setIsSettingsModalOpen(true); setIsDropdownOpen(false); setSettingsTab("main"); }} style={{ padding: "8px 15px", cursor: "pointer" }}>Настройки</div>
+                                        <div onClick={() => { setCurrentUser(null); setIsDropdownOpen(false); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#ef4444" }}>Выйти</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </header>
+
+                    <main style={{ padding: "50px" }}>
+                        <h1 style={{ color: "#fff", borderLeft: "4px solid #dc2626", paddingLeft: "15px" }}>Панель управления HellShop</h1>
+                        <p style={{ color: "#888" }}>Твой бесплатный сайт 24/7 готов к публикации!</p>
+                    </main>
+
+                    {/* НАСТРОЙКИ */}
+                    {isSettingsModalOpen && (
+                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+                            <div style={{ backgroundColor: "#141414", padding: "30px", borderRadius: "12px", width: "450px", border: "1px solid #dc2626" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
+                                    <h3>Настройки аккаунта</h3>
+                                    <button onClick={() => setIsSettingsModalOpen(false)} style={{ background: "none", border: "none", color: "#888", fontSize: "20px", cursor: "pointer" }}>×</button>
+                                </div>
+                                {settingsTab === "main" ? (
+                                    <div style={{ display: "flex", gap: "20px" }}>
+                                        <img src={currentUser.avatar} style={{ width: "100px", height: "100px", borderRadius: "50%" }} />
+                                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
+                                            <button onClick={() => setSettingsTab("email")} style={{ padding: "10px", backgroundColor: "#1f1f1f", color: currentUser.email ? "#4ade80" : "#fff", border: "1px solid #333", borderRadius: "6px", cursor: "pointer" }}>
+                                                {currentUser.email ? `Почта: ${currentUser.email}` : "Привязать почту"}
+                                            </button>
+                                            <button onClick={() => setSettingsTab("phone")} style={{ padding: "10px", backgroundColor: "#1f1f1f", color: currentUser.phone ? "#4ade80" : "#fff", border: "1px solid #333", borderRadius: "6px", cursor: "pointer" }}>
+                                                {currentUser.phone ? `Телефон: ${currentUser.phone}` : "Привязать телефон"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <h4>{settingsTab === "email" ? "Привязка почты" : "Привязка телефона"}</h4>
+                                        <input type="text" placeholder="Введите данные" value={settingsTab === "email" ? inputEmail : inputPhone} onChange={(e) => settingsTab === "email" ? setInputEmail(e.target.value) : setInputPhone(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #333" }} />
+                                        {codeSent && <input type="text" placeholder="Код подтверждения" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #dc2626" }} />}
+                                        <button onClick={settingsTab === "email" ? (codeSent ? handleVerifyEmail : handleSendEmailCode) : (codeSent ? handleVerifyPhone : handleSendPhoneCode)} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+                                            {codeSent ? "Подтвердить код" : "Получить код"}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ВХОД */}
+                    {isAuthModalOpen && (
+                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+                            <div style={{ backgroundColor: "#141414", padding: "30px", borderRadius: "8px", width: "320px", border: "1px solid #dc2626" }}>
+                                <h3 style={{ textAlign: "center" }}>{authMode === "login" ? "Авторизация" : "Регистрация"}</h3>
+                                <p style={{ textAlign: "center", fontSize: "12px", color: "#888" }} onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? "Нет аккаунта? Создать" : "Есть аккаунт? Войти"}</p>
+                                <input type="text" placeholder="Логин" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #333" }} />
+                                <input type="password" placeholder="Пароль" value={inputPassword} onChange={(e) => setInputPassword(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "20px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #333" }} />
+                                <button onClick={handleAuth} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px" }}>Продолжить</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
