@@ -2,74 +2,65 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HELLSHOP</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body style="margin:0; padding:0; background-color: #0a0a0a; color: #fff; font-family: sans-serif; 
-             background-image: linear-gradient(rgba(20, 0, 0, 0.85), rgba(20, 0, 0, 0.85)), url('https://w.wallhaven.cc/full/4x/wallhaven-4x1666.jpg'); 
-             background-size: cover; background-attachment: fixed;">
+<body style="margin:0; padding:0; background-color: #0a0a0a; color: #e5e5e5; font-family: sans-serif;">
     <div id="root"></div>
 
     <script type="text/babel">
-        const DEFAULT_AVATAR = `https://i.imgur.com/8Km5G4K.png`; // Заменил на иконку
-        const SUPPORT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 15 L25 35 L25 65 L50 85 L75 65 L75 35 Z" fill="%23dc2626"/></svg>`;
-
         function App() {
-            const [currentUser, setCurrentUser] = React.useState(() => JSON.parse(localStorage.getItem("user")));
-            const [activePage, setActivePage] = React.useState("main");
+            // Состояние настроек
+            const [email, setEmail] = React.useState(() => localStorage.getItem("h_email") || "");
+            const [phone, setPhone] = React.useState(() => localStorage.getItem("h_phone") || "");
             const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
-            
-            // Данные для настроек
-            const [email, setEmail] = React.useState(currentUser?.email || "");
-            const [phone, setPhone] = React.useState(currentUser?.phone || "");
 
             const saveSettings = () => {
-                const updated = {...currentUser, email, phone};
-                setCurrentUser(updated);
-                localStorage.setItem("user", JSON.stringify(updated));
-                alert("✅ Сохранено в крови!");
+                localStorage.setItem("h_email", email);
+                localStorage.setItem("h_phone", phone);
+                alert("✅ Данные сохранены!");
                 setIsSettingsOpen(false);
             };
 
             return (
-                <div style={{ minHeight: "100vh", backgroundColor: "rgba(0,0,0,0.6)" }}>
+                <div style={{ minHeight: "100vh" }}>
                     {/* Кровавая шапка */}
-                    <header style={{ display: "flex", justifyContent: "space-between", padding: "20px 50px", borderBottom: "2px solid #7f1d1d", backgroundColor: "rgba(30,0,0,0.7)" }}>
-                        <h1 style={{ color: "#dc2626", margin: 0 }}>HELLSHOP</h1>
-                        <nav style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-                            {["Главная", "Покупки", "Сообщения", "Финансы"].map(item => (
-                                <span onClick={() => setActivePage(item)} style={{ cursor: "pointer", color: "#fca5a5" }}>{item}</span>
-                            ))}
-                            {currentUser && <button onClick={() => setIsSettingsOpen(true)} style={{ background: "#7f1d1d", color: "#fff", border: "none", padding: "5px 10px" }}>⚙️</button>}
-                        </nav>
+                    <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 30px", height: "70px", backgroundColor: "#141414", borderBottom: "2px solid #dc2626" }}>
+                        <div style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626" }}>HELLSHOP</div>
+                        <div style={{ display: "flex", gap: "20px", color: "#a3a3a3" }}>
+                            <span>Главная</span><span>Покупки</span><span>Сообщения</span><span>Финансы</span>
+                            <button onClick={() => setIsSettingsOpen(true)} style={{ background: "#dc2626", border: "none", color: "#fff", padding: "5px 10px", cursor: "pointer", borderRadius: "4px" }}>Настройки</button>
+                        </div>
                     </header>
 
+                    {/* Контент */}
                     <main style={{ padding: "50px" }}>
-                        <h1>{activePage}</h1>
-                        <div style={{ background: "rgba(20,0,0,0.7)", padding: "20px", border: "1px solid #7f1d1d", borderRadius: "10px" }}>
-                            <p>Добро пожаловать в адский магазин. Здесь продается лучший софт и скрипты.</p>
-                            {activePage === "Главная" && <img src="https://i.pinimg.com/736x/8a/8a/8a/8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a.jpg" alt="Waifu" style={{ width: "300px", borderRadius: "10px", marginTop: "20px" }} />}
+                        <h1>main</h1>
+                        <div style={{ padding: "20px", border: "1px solid #dc2626", borderRadius: "8px", backgroundColor: "#141414" }}>
+                            Добро пожаловать в адский магазин. Здесь продается лучший софт и скрипты.
                         </div>
                     </main>
 
-                    {/* Настройки */}
+                    {/* Модалка настроек */}
                     {isSettingsOpen && (
-                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.9)", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                            <div style={{ background: "#141414", padding: "30px", border: "1px solid #dc2626", borderRadius: "10px" }}>
-                                <h2>Настройки аккаунта</h2>
-                                <input placeholder="Почта" value={email} onChange={e => setEmail(e.target.value)} style={{ display: "block", width: "100%", margin: "10px 0", padding: "10px" }} />
-                                <input placeholder="Телефон" value={phone} onChange={e => setPhone(e.target.value)} style={{ display: "block", width: "100%", margin: "10px 0", padding: "10px" }} />
-                                <button onClick={saveSettings} style={{ background: "#dc2626", color: "#fff", padding: "10px 20px" }}>Сохранить</button>
-                                <button onClick={() => setIsSettingsOpen(false)} style={{ marginLeft: "10px" }}>Закрыть</button>
+                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                            <div style={{ backgroundColor: "#141414", padding: "30px", border: "1px solid #dc2626", borderRadius: "8px", width: "300px" }}>
+                                <h3>Настройки аккаунта</h3>
+                                <input placeholder="Почта" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", padding: "10px", margin: "10px 0", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff" }} />
+                                <input placeholder="Телефон" value={phone} onChange={e => setPhone(e.target.value)} style={{ width: "100%", padding: "10px", margin: "10px 0", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff" }} />
+                                <button onClick={saveSettings} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>Сохранить</button>
+                                <button onClick={() => setIsSettingsOpen(false)} style={{ width: "100%", padding: "10px", marginTop: "10px", backgroundColor: "#333", color: "#fff", border: "none", cursor: "pointer" }}>Закрыть</button>
                             </div>
                         </div>
                     )}
                 </div>
             );
         }
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
