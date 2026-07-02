@@ -20,39 +20,47 @@
             { id: 100001, username: "hellwhyworker", password: "123ddEdd", avatar: DEFAULT_AVATAR, email: "", phone: "" } 
         ];
 
-        // Изначальные мок-данные для таблиц
-        const mockPurchases = [
-            { date: "17 июня, 0:11", order: "#R2MGQUG7", desc: "USD, Подарочная карта, Steam", seller: "Lotkeys", status: "Закрыт", price: "201.85 ₽" },
-            { date: "5 апреля, 4:51", order: "#BRUUCU14", desc: "Bluestacks ZeroAvg Лучший КАСТОМНЫЙ...", seller: "Auxzeper", status: "Закрыт", price: "68.35 ₽" }
-        ];
-
-        const mockSales = [
-            { date: "16 марта, 20:11", order: "#CBGX7BP3", desc: "gugu gaga, Standoff 2, Услуги", buyer: "w1nman", status: "Закрыт", price: "1.00 ₽" }
-        ];
-
-        const mockFinances = [
-            { date: "17 июня, 0:12", desc: "Заказ #R2MGQUG7", status: "Завершено", sum: "- 201.85 ₽", isPositive: false },
-            { date: "17 июня, 0:12", desc: "Пополнение баланса #157170815", status: "Завершено", sum: "+ 201.85 ₽", isPositive: true }
-        ];
+        // --- ДАННЫЕ 100% ПУСТЫЕ ПОД НОЛЬ ---
+        const mockPurchases = [];
+        const mockSales = [];
+        const mockFinances = [];
 
         function App() {
-            const [usersDatabase, setUsersDatabase] = React.useState(initialUsers);
-            const [currentUser, setCurrentUser] = React.useState(null); 
+            // --- ЛОКАЛЬНОЕ ХРАНИЛИЩЕ (Сохраняем данные после F5) ---
+            const [usersDatabase, setUsersDatabase] = React.useState(() => {
+                const saved = localStorage.getItem("hellshop_users");
+                return saved ? JSON.parse(saved) : initialUsers;
+            });
+
+            const [currentUser, setCurrentUser] = React.useState(() => {
+                const saved = localStorage.getItem("hellshop_currentUser");
+                return saved ? JSON.parse(saved) : null;
+            });
+
+            const [chatMessages, setChatMessages] = React.useState(() => {
+                const saved = localStorage.getItem("hellshop_chats");
+                return saved ? JSON.parse(saved) : [
+                    { sender: "Поддержка", avatar: SUPPORT_AVATAR, text: "Поздравляем с созданием аккаунта в HellShop! Ждём дальнейших покупок! 🖤", time: "Только что" }
+                ];
+            });
+
+            // Сохраняем в память при любом изменении
+            React.useEffect(() => { localStorage.setItem("hellshop_users", JSON.stringify(usersDatabase)); }, [usersDatabase]);
+            React.useEffect(() => { 
+                if (currentUser) localStorage.setItem("hellshop_currentUser", JSON.stringify(currentUser));
+                else localStorage.removeItem("hellshop_currentUser");
+            }, [currentUser]);
+            React.useEffect(() => { localStorage.setItem("hellshop_chats", JSON.stringify(chatMessages)); }, [chatMessages]);
+
+            // --------------------------------------------------------
+
             const [activePage, setActivePage] = React.useState("main"); 
-            
             const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
             const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
             const [authMode, setAuthMode] = React.useState("login");
-            const [settingsTab, setSettingsTab] = React.useState("main"); 
-            
             const [inputUsername, setInputUsername] = React.useState("");
             const [inputPassword, setInputPassword] = React.useState("");
-
-            // Логика чата с Поддержкой
-            const [chatMessages, setChatMessages] = React.useState([
-                { sender: "Поддержка", avatar: SUPPORT_AVATAR, text: "Поздравляем с созданием аккаунта в HellShop! Ждём дальнейших покупок! 🖤", time: "Только что" }
-            ]);
             const [typedMessage, setTypedMessage] = React.useState("");
 
             const handleSendMessage = () => {
@@ -72,10 +80,17 @@
                 if (authMode === "register") {
                     if (usersDatabase.find(u => u.username === inputUsername)) return alert("❌ Ник занят!");
                     const newUser = { id: 100000 + usersDatabase.length + 1, username: inputUsername, password: inputPassword, avatar: DEFAULT_AVATAR, email: "", phone: "" };
-                    setUsersDatabase([...usersDatabase, newUser]); setCurrentUser(newUser); setIsAuthModalOpen(false);
+                    setUsersDatabase([...usersDatabase, newUser]); 
+                    setCurrentUser(newUser); 
+                    setIsAuthModalOpen(false);
                 } else {
                     const user = usersDatabase.find(u => u.username === inputUsername && u.password === inputPassword);
-                    if (user) { setCurrentUser(user); setIsAuthModalOpen(false); } else { alert("❌ Неверный логин или пароль!"); }
+                    if (user) { 
+                        setCurrentUser(user); 
+                        setIsAuthModalOpen(false); 
+                    } else { 
+                        alert("❌ Неверный логин или пароль!"); 
+                    }
                 }
                 setInputUsername(""); setInputPassword("");
             };
@@ -87,17 +102,25 @@
                             <tr>{headers.map((h, i) => <th key={i} style={{ padding: "15px", color: "#888" }}>{h}</th>)}</tr>
                         </thead>
                         <tbody>
-                            {data.map((row, i) => (
-                                <tr key={i} style={{ borderBottom: "1px solid #222" }}>
-                                    <td style={{ padding: "15px", color: "#888" }}>{row.date}</td>
-                                    {type !== 'finances' && <td style={{ padding: "15px" }}>{row.order}</td>}
-                                    <td style={{ padding: "15px" }}>{row.desc}</td>
-                                    {type === 'purchases' && <td style={{ padding: "15px", color: "#60a5fa" }}>{row.seller}</td>}
-                                    {type === 'sales' && <td style={{ padding: "15px", color: "#60a5fa" }}>{row.buyer}</td>}
-                                    <td style={{ padding: "15px", color: row.status === "Закрыт" || row.status === "Завершено" ? "#4ade80" : "#f87171" }}>{row.status}</td>
-                                    <td style={{ padding: "15px", fontWeight: "bold", color: row.isPositive ? "#4ade80" : "#e5e5e5" }}>{row.sum || row.price}</td>
+                            {data.length === 0 ? (
+                                <tr>
+                                    <td colSpan={headers.length} style={{ padding: "30px", textAlign: "center", color: "#666", fontSize: "15px" }}>
+                                        {type === 'purchases' ? "Вы еще не совершали покупок." : type === 'sales' ? "У вас еще нет продаж." : "История операций пуста."}
+                                    </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                data.map((row, i) => (
+                                    <tr key={i} style={{ borderBottom: "1px solid #222" }}>
+                                        <td style={{ padding: "15px", color: "#888" }}>{row.date}</td>
+                                        {type !== 'finances' && <td style={{ padding: "15px" }}>{row.order}</td>}
+                                        <td style={{ padding: "15px" }}>{row.desc}</td>
+                                        {type === 'purchases' && <td style={{ padding: "15px", color: "#60a5fa" }}>{row.seller}</td>}
+                                        {type === 'sales' && <td style={{ padding: "15px", color: "#60a5fa" }}>{row.buyer}</td>}
+                                        <td style={{ padding: "15px", color: row.status === "Закрыт" || row.status === "Завершено" ? "#4ade80" : "#f87171" }}>{row.status}</td>
+                                        <td style={{ padding: "15px", fontWeight: "bold", color: row.isPositive ? "#4ade80" : "#e5e5e5" }}>{row.sum || row.price}</td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -162,7 +185,7 @@
                                 {activePage === "main" && (
                                     <div>
                                         <h1 style={{ borderLeft: "4px solid #dc2626", paddingLeft: "15px", margin: 0 }}>Главная</h1>
-                                        <p style={{ color: "#888", marginTop: "15px" }}>Добро пожаловать в HellShop! Твой сайт успешно запущен в сеть.</p>
+                                        <p style={{ color: "#888", marginTop: "15px" }}>Добро пожаловать в HellShop! Теперь авторизация и чаты сохраняются даже после перезагрузки страницы.</p>
                                     </div>
                                 )}
 
@@ -191,7 +214,7 @@
 
                                 {activePage === "messages" && (
                                     <div style={{ display: "flex", border: "1px solid #333", borderRadius: "8px", height: "650px", backgroundColor: "#141414", overflow: "hidden" }}>
-                                        {/* СПИСОК ЧАТОВ (Остался один чат поддержки) */}
+                                        {/* СПИСОК ЧАТОВ */}
                                         <div style={{ width: "320px", borderRight: "1px solid #333", overflowY: "auto" }}>
                                             <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #333" }}>Сообщения</div>
                                             <div style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: "#1f1f1f" }}>
@@ -251,15 +274,15 @@
                         )}
                     </main>
 
-                    {/* МОДАЛКИ (Окна входа) */}
+                    {/* МОДАЛКИ */}
                     {isSettingsModalOpen && currentUser && (
                         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                             <div style={{ backgroundColor: "#141414", padding: "30px", borderRadius: "12px", width: "450px", border: "1px solid #dc2626" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-                                    <h3>Настройки</h3>
+                                    <h3>Настройки аккаунта</h3>
                                     <button onClick={() => setIsSettingsModalOpen(false)} style={{ background: "none", border: "none", color: "#888", fontSize: "20px", cursor: "pointer" }}>×</button>
                                 </div>
-                                <p style={{color: "#888"}}>Настройки профиля будут доступны в полной версии.</p>
+                                <p style={{color: "#888"}}>Настройки профиля пока отключены.</p>
                             </div>
                         </div>
                     )}
