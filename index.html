@@ -22,7 +22,6 @@
         ::-webkit-scrollbar-thumb:hover { background: #dc2626; }
         .bloody-bg { background: linear-gradient(180deg, #1a0000 0%, #050000 100%); min-height: 100vh; }
         .neon-text { text-shadow: 0 0 10px rgba(220, 38, 38, 0.7); }
-        .search-input::placeholder { color: #888; }
     </style>
 </head>
 <body>
@@ -138,11 +137,15 @@
             const [inputEmail, setInputEmail] = React.useState("");
             const [inputPhone, setInputPhone] = React.useState("");
             const [inputAvatar, setInputAvatar] = React.useState("");
+            
+            // Состояние для поиска ВНУТРИ сообщений
             const [searchQuery, setSearchQuery] = React.useState("");
 
-            const searchResults = searchQuery.trim() ? usersDatabase.filter(u => 
-                (u.id.toString().includes(searchQuery) || u.username.toLowerCase().includes(searchQuery.toLowerCase())) && (!currentUser || u.id !== currentUser.id)
-            ) : [];
+            const searchResults = searchQuery.trim() ? usersDatabase.filter(u => {
+                const safeUsername = u.username ? u.username.toLowerCase() : "";
+                const safeId = u.id ? u.id.toString() : "";
+                return (safeId.includes(searchQuery) || safeUsername.includes(searchQuery.toLowerCase())) && (!currentUser || u.id !== currentUser.id);
+            }) : [];
 
             React.useEffect(() => {
                 if (currentUser && isSettingsModalOpen) {
@@ -179,14 +182,10 @@
                 if (authMode === "register") {
                     if (usersDatabase.find(u => u.username === inputUsername)) return alert("❌ Ник занят!");
                     
-                    // --- ИСПРАВЛЕННАЯ ЛОГИКА ГЕНЕРАЦИИ ID ---
-                    // Находим максимальный ID в базе, если база пуста - начинаем с 100000
                     const maxId = usersDatabase.length > 0 
-                        ? Math.max(...usersDatabase.map(u => u.id)) 
+                        ? Math.max(...usersDatabase.map(u => u.id || 100000)) 
                         : 100000;
-                    
-                    const newId = maxId + 1; // Увеличиваем ровно на 1 от самого большого
-                    
+                    const newId = maxId + 1; 
                     const newUser = { id: newId, username: inputUsername, password: inputPassword, avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Пользователь", isOnline: true };
                     
                     db.ref('users/' + newId).set(newUser);
@@ -215,13 +214,14 @@
                 setActivePage("main");
             };
 
+            // Открытие чата ПРЯМО В ТАБЕ (никуда не переходит)
             const openUserChat = (userId) => {
+                if (!currentUser) return alert("Сначала войдите в аккаунт!");
                 if (!openedChats.includes(userId)) {
                     setOpenedChats([userId, ...openedChats]);
                 }
                 setActiveChat(userId);
-                setActivePage("messages");
-                setSearchQuery("");
+                setSearchQuery(""); // Очищаем поиск, показывая обычный список чатов
             };
 
             const handleGrantAdmin = (userId) => {
@@ -313,51 +313,13 @@
                     <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 30px", height: "70px", backgroundColor: "rgba(10, 0, 0, 0.9)", borderBottom: "2px solid #dc2626", boxShadow: "0 4px 15px rgba(220, 38, 38, 0.2)" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "30px" }}>
                             <div onClick={() => setActivePage("main")} className="neon-text" style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626", cursor: "pointer", letterSpacing: "1px" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
-                            
-                            <div style={{ position: "relative" }}>
-                                <div style={{ display: "flex", alignItems: "center", backgroundColor: "#0a0a0a", border: "1px solid #dc2626", borderRadius: "20px", padding: "5px 15px", width: "250px" }}>
-                                    <span style={{ color: "#888", marginRight: "10px" }}>🔍</span>
-                                    <input 
-                                        type="text" 
-                                        className="search-input"
-                                        placeholder="Поиск по ID или Нику..." 
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        style={{ background: "transparent", border: "none", color: "#fff", outline: "none", width: "100%", fontSize: "13px" }}
-                                    />
-                                    {searchQuery && (
-                                        <span onClick={() => setSearchQuery("")} style={{ color: "#dc2626", cursor: "pointer", fontWeight: "bold", marginLeft: "5px", padding: "0 5px" }}>×</span>
-                                    )}
-                                </div>
-                                {searchQuery && (
-                                    <div style={{ position: "absolute", top: "45px", left: 0, width: "100%", backgroundColor: "rgba(15,0,0,0.95)", border: "1px solid #dc2626", borderRadius: "8px", zIndex: 50, overflow: "hidden", boxShadow: "0 10px 20px rgba(0,0,0,0.8)" }}>
-                                        {searchResults.length > 0 ? searchResults.map(u => (
-                                            <div key={u.id} onClick={() => {if(currentUser) openUserChat(u.id); else alert("Сначала войдите в аккаунт!");}} style={{ padding: "10px 15px", display: "flex", alignItems: "center", gap: "12px", borderBottom: "1px solid #333", cursor: "pointer" }}>
-                                                <img src={u.avatar} style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1px solid #555", objectFit: "cover" }} />
-                                                <div style={{ display: "flex", flexDirection: "column" }}>
-                                                    <div style={{ display: "flex", alignItems: "center" }}>
-                                                        <span style={{ color: "#fff", fontWeight: "bold", fontSize: "14px" }}>{u.username}</span>
-                                                        <RoleBadge role={u.role} />
-                                                    </div>
-                                                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                                                        <span style={{ color: "#888", fontSize: "11px" }}>ID: {u.id}</span>
-                                                        {u.isOnline && <span style={{ color: "#4ade80", fontSize: "10px" }}>• В сети</span>}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )) : (
-                                            <div style={{ padding: "15px", color: "#888", fontSize: "13px", textAlign: "center" }}>Ничего не найдено</div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
                         </div>
 
                         <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
                             <div style={{ display: "flex", gap: "20px", fontSize: "14px", fontWeight: "500" }}>
-                                {["messages"].map(page => (
+                                {["purchases", "sales", "messages", "finances"].map(page => (
                                     <span key={page} onClick={() => setActivePage(page)} style={{ cursor: "pointer", transition: "0.2s", color: activePage === page ? "#dc2626" : "#a3a3a3", borderBottom: activePage === page ? "2px solid #dc2626" : "none", paddingBottom: "23px", paddingTop: "25px" }}>
-                                        Сообщения
+                                        {page === "purchases" ? "Покупки" : page === "sales" ? "Продажи" : page === "messages" ? "Сообщения" : "Финансы"}
                                     </span>
                                 ))}
                             </div>
@@ -410,60 +372,111 @@
                                     </div>
                                 )}
 
+                                {activePage === "purchases" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои покупки</h1>{renderTable(["Дата", "Заказ", "Описание", "Продавец", "Статус", "Сумма"], [], "purchases")}</div>)}
+                                {activePage === "sales" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои продажи</h1>{renderTable(["Дата", "Заказ", "Описание", "Покупатель", "Статус", "Сумма"], [], "sales")}</div>)}
+                                {activePage === "finances" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Финансы</h1>{renderTable(["Дата", "Описание", "Статус", "Сумма"], [], "finances")}</div>)}
+
                                 {activePage === "messages" && (
                                     <div style={{ display: "flex", border: "1px solid #dc2626", borderRadius: "8px", height: "700px", backgroundColor: "rgba(10, 0, 0, 0.8)", overflow: "hidden", boxShadow: "0 0 20px rgba(220,38,38,0.15)" }}>
-                                        {/* СПИСОК ЧАТОВ */}
-                                        <div style={{ width: "320px", borderRight: "1px solid #dc2626", overflowY: "auto", backgroundColor: "rgba(0,0,0,0.5)" }}>
+                                        
+                                        {/* ЛЕВАЯ КОЛОНКА: СПИСОК ЧАТОВ И ПОИСК */}
+                                        <div style={{ width: "320px", borderRight: "1px solid #dc2626", overflowY: "auto", backgroundColor: "rgba(0,0,0,0.5)", display: "flex", flexDirection: "column" }}>
                                             <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #dc2626", color: "#dc2626" }}>Чаты</div>
                                             
-                                            <div onClick={() => setActiveChat("notifications")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "notifications" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
-                                                <img src={NOTIFY_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #facc15" }} />
-                                                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                                    <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Уведомления ✔</span>
-                                                    <span style={{ fontSize: "13px", color: "#888" }}>Система</span>
+                                            {/* ПОИСК ЛЮДЕЙ ВНУТРИ СООБЩЕНИЙ */}
+                                            <div style={{ padding: "10px 15px", borderBottom: "1px solid #333" }}>
+                                                <div style={{ display: "flex", alignItems: "center", backgroundColor: "#0a0a0a", border: "1px solid #dc2626", borderRadius: "4px", padding: "5px 10px" }}>
+                                                    <span style={{ color: "#888", marginRight: "8px", fontSize: "14px" }}>🔍</span>
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Найти по ID или Нику..." 
+                                                        value={searchQuery}
+                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                        style={{ background: "transparent", border: "none", color: "#fff", outline: "none", width: "100%", fontSize: "13px" }}
+                                                    />
+                                                    {searchQuery && <span onClick={() => setSearchQuery("")} style={{ color: "#dc2626", cursor: "pointer", fontWeight: "bold", marginLeft: "5px" }}>×</span>}
                                                 </div>
                                             </div>
 
-                                            <div onClick={() => setActiveChat("support")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "support" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
-                                                <div style={{ position: "relative" }}>
-                                                    <img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} />
-                                                    <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>
-                                                </div>
-                                                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}>
-                                                        <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Поддержка ✔</span>
-                                                        <span style={{ fontSize: "11px", color: "#4ade80" }}>В сети 24/7</span>
-                                                    </div>
-                                                    <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Бот поддержки поможет...</div>
-                                                </div>
-                                            </div>
-
-                                            {/* РЕНДЕР ЛИЧНЫХ ЧАТОВ */}
-                                            {openedChats.map(userId => {
-                                                const u = usersDatabase.find(x => x.id === userId);
-                                                if(!u) return null;
-                                                return (
-                                                    <div key={u.id} onClick={() => setActiveChat(u.id)} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === u.id ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
-                                                        <div style={{ position: "relative" }}>
-                                                            <img src={u.avatar} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #555", objectFit: "cover" }} />
-                                                            {u.isOnline && <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>}
-                                                        </div>
-                                                        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}>
-                                                                <div style={{ display: "flex", alignItems: "center" }}>
-                                                                    <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{u.username}</span>
-                                                                    <RoleBadge role={u.role} />
+                                            <div style={{ flex: 1, overflowY: "auto" }}>
+                                                {searchQuery.trim() ? (
+                                                    // ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ ПОИСКА
+                                                    <div>
+                                                        <div style={{ padding: "10px 15px", fontSize: "11px", color: "#dc2626", fontWeight: "bold", textTransform: "uppercase" }}>Глобальный поиск</div>
+                                                        {searchResults.length > 0 ? searchResults.map(u => (
+                                                            <div key={u.id} onClick={() => openUserChat(u.id)} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: "transparent", borderBottom: "1px solid #333" }}>
+                                                                <div style={{ position: "relative" }}>
+                                                                    <img src={u.avatar} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #555", objectFit: "cover" }} />
+                                                                    {u.isOnline && <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>}
                                                                 </div>
-                                                                {u.isOnline && <span style={{ fontSize: "11px", color: "#4ade80" }}>В сети</span>}
+                                                                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                                                        <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{u.username}</span>
+                                                                        <RoleBadge role={u.role} />
+                                                                    </div>
+                                                                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                                                        <span style={{ color: "#888", fontSize: "12px" }}>ID: {u.id}</span>
+                                                                        {u.isOnline && <span style={{ color: "#4ade80", fontSize: "11px" }}>• В сети</span>}
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <span style={{ fontSize: "13px", color: "#888" }}>Личный чат</span>
-                                                        </div>
+                                                        )) : (
+                                                            <div style={{ padding: "15px", color: "#888", fontSize: "13px", textAlign: "center" }}>Никого не найдено</div>
+                                                        )}
                                                     </div>
-                                                );
-                                            })}
+                                                ) : (
+                                                    // СТАНДАРТНЫЙ СПИСОК ЧАТОВ
+                                                    <>
+                                                        <div onClick={() => setActiveChat("notifications")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "notifications" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
+                                                            <img src={NOTIFY_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #facc15" }} />
+                                                            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                                <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Уведомления ✔</span>
+                                                                <span style={{ fontSize: "13px", color: "#888" }}>Система</span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div onClick={() => setActiveChat("support")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "support" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
+                                                            <div style={{ position: "relative" }}>
+                                                                <img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} />
+                                                                <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>
+                                                            </div>
+                                                            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}>
+                                                                    <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Поддержка ✔</span>
+                                                                    <span style={{ fontSize: "11px", color: "#4ade80" }}>В сети 24/7</span>
+                                                                </div>
+                                                                <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Бот поддержки поможет...</div>
+                                                            </div>
+                                                        </div>
+
+                                                        {openedChats.map(userId => {
+                                                            const u = usersDatabase.find(x => x.id === userId);
+                                                            if(!u) return null;
+                                                            return (
+                                                                <div key={u.id} onClick={() => setActiveChat(u.id)} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === u.id ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
+                                                                    <div style={{ position: "relative" }}>
+                                                                        <img src={u.avatar} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #555", objectFit: "cover" }} />
+                                                                        {u.isOnline && <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>}
+                                                                    </div>
+                                                                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}>
+                                                                            <div style={{ display: "flex", alignItems: "center" }}>
+                                                                                <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{u.username}</span>
+                                                                                <RoleBadge role={u.role} />
+                                                                            </div>
+                                                                            {u.isOnline && <span style={{ fontSize: "11px", color: "#4ade80" }}>В сети</span>}
+                                                                        </div>
+                                                                        <span style={{ fontSize: "13px", color: "#888" }}>Личный чат</span>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                         
-                                        {/* ОКНО ДИАЛОГА */}
+                                        {/* ПРАВАЯ КОЛОНКА: ОКНО ДИАЛОГА */}
                                         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                                             <div style={{ padding: "15px 20px", borderBottom: "1px solid #dc2626", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "rgba(20,0,0,0.5)" }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
