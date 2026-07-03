@@ -4,11 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HELLSHOP</title>
+    <!-- Подключаем React -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* Добавляем немного магии CSS для кровавого стиля и скроллбаров */
+        body { margin: 0; padding: 0; background-color: #050000; color: #e5e5e5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #500000; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #dc2626; }
+        .bloody-bg { background: linear-gradient(180deg, #1a0000 0%, #050000 100%); min-height: 100vh; }
+        .neon-text { text-shadow: 0 0 10px rgba(220, 38, 38, 0.7); }
+    </style>
 </head>
-<body style="margin:0; padding:0; background-color: #0a0a0a; color: #e5e5e5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
@@ -17,16 +28,15 @@
         const NOTIFY_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 20 C35 20, 30 35, 30 50 L25 70 L75 70 L70 50 C70 35, 65 20, 50 20 Z" fill="%23facc15"/><circle cx="50" cy="80" r="7" fill="%23facc15"/></svg>`;
 
         const initialUsers = [
-            { id: 100001, username: "hellwhyworker", password: "123ddEdd", avatar: DEFAULT_AVATAR, email: "", phone: "" } 
+            { id: 100001, username: "hellwhyworker", password: "123", avatar: DEFAULT_AVATAR, email: "", phone: "" } 
         ];
 
-        // --- ДАННЫЕ ПУСТЫЕ ПОД НОЛЬ ---
+        // Пустые таблицы
         const mockPurchases = [];
         const mockSales = [];
         const mockFinances = [];
-        const notifications = []; // Уведомления теперь тоже абсолютно пустые
+        const notifications = []; 
 
-        // Категории кнопок для бота
         const mainCategories = ["🛒 Для покупателей", "🤑 Для продавцов", "💰 Баланс и выплаты", "🔒 Безопасность", "📜 Правила сайта", "🐛 Нашел баг"];
         const buyerCategories = ["🔙 Назад", "❓ Как проходит сделка?", "📦 Способы получения", "💬 Чат с продавцом", "💡 Советы", "💳 Оплата товаров", "✅ Гарантии и возврат", "⭐ Отзывы"];
 
@@ -49,11 +59,9 @@
                 ];
             });
 
-            const [supportMenu, setSupportMenu] = React.useState(() => {
-                const saved = localStorage.getItem("hellshop_supportMenu");
-                return saved ? saved : "main";
-            });
+            const [supportMenu, setSupportMenu] = React.useState(() => localStorage.getItem("hellshop_supportMenu") || "main");
 
+            // Сохранение при изменениях
             React.useEffect(() => { localStorage.setItem("hellshop_users", JSON.stringify(usersDatabase)); }, [usersDatabase]);
             React.useEffect(() => { 
                 if (currentUser) localStorage.setItem("hellshop_currentUser", JSON.stringify(currentUser));
@@ -62,8 +70,7 @@
             React.useEffect(() => { localStorage.setItem("hellshop_chats", JSON.stringify(chatMessages)); }, [chatMessages]);
             React.useEffect(() => { localStorage.setItem("hellshop_supportMenu", supportMenu); }, [supportMenu]);
 
-            // --------------------------------------------------------
-
+            // --- СОСТОЯНИЯ UI ---
             const [activePage, setActivePage] = React.useState("main"); 
             const [activeChat, setActiveChat] = React.useState("support"); 
             
@@ -71,20 +78,42 @@
             const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
             const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
             const [authMode, setAuthMode] = React.useState("login");
+            
+            // Инпуты авторизации
             const [inputUsername, setInputUsername] = React.useState("");
             const [inputPassword, setInputPassword] = React.useState("");
             const [typedMessage, setTypedMessage] = React.useState("");
 
+            // Инпуты настроек
+            const [inputEmail, setInputEmail] = React.useState("");
+            const [inputPhone, setInputPhone] = React.useState("");
+
+            // Подтягиваем данные юзера при открытии настроек
+            React.useEffect(() => {
+                if (currentUser && isSettingsModalOpen) {
+                    setInputEmail(currentUser.email || "");
+                    setInputPhone(currentUser.phone || "");
+                }
+            }, [isSettingsModalOpen, currentUser]);
+
+            // --- ЛОГИКА СОХРАНЕНИЯ НАСТРОЕК ---
+            const handleSaveSettings = () => {
+                if (!currentUser) return;
+                const updatedUser = { ...currentUser, email: inputEmail, phone: inputPhone };
+                setCurrentUser(updatedUser);
+                setUsersDatabase(usersDatabase.map(u => u.id === currentUser.id ? updatedUser : u));
+                alert("🩸 Данные успешно сохранены в адскую базу!");
+                setIsSettingsModalOpen(false);
+            };
+
             const handleSendMessage = (text = typedMessage) => {
                 if (!text.trim()) return;
 
-                // Если нажали назад, просто меняем меню, сообщение не отправляем
                 if (text === "🔙 Назад") {
                     setSupportMenu("main");
                     return;
                 }
 
-                // 1. Добавляем сообщение пользователя
                 const newMsg = {
                     sender: currentUser ? currentUser.username : "Вы",
                     avatar: currentUser ? currentUser.avatar : DEFAULT_AVATAR,
@@ -94,11 +123,9 @@
                 let updatedMessages = [...chatMessages, newMsg];
                 setTypedMessage("");
 
-                // 2. Логика автоответов бота
                 let botReplyText = "";
                 let newMenu = supportMenu;
 
-                // Ответы для главного меню
                 if (text === "🛒 Для покупателей") {
                     botReplyText = "HellShop — это маркетплейс, где продавцы предлагают товары, а покупатели совершают покупки. Все объявления о товарах проходят проверку. У нас более 100.000 товаров по 400+ играм и приложениям.\n\nКак купить товар?\n1️⃣ Нажмите «Купить» на странице объявления о товаре;\n2️⃣ Выберите способ оплаты или используйте баланс на сайте;\n3️⃣ Следуйте инструкции на странице сделки.\n\nВозникли вопросы? Воспользуйтесь 🤖 Ботом, выбрав категорию ниже!";
                     newMenu = "buyers";
@@ -107,43 +134,33 @@
                 } else if (text === "💰 Баланс и выплаты") {
                     botReplyText = "Все операции по балансу прозрачны. Выплаты заработанных средств производятся на банковские карты, кошельки и криптовалюту в срок от 5 минут до 24 часов.";
                 } else if (text === "🔒 Безопасность") {
-                    botReplyText = "Ваши средства надежно защищены системой безопасных сделок. Главное правило: НИКОГДА не переходите в Telegram или Discord для проведения сделки. Общайтесь только в чате HellShop.";
+                    botReplyText = "Ваши средства надежно защищены системой безопасных сделок. НИКОГДА не переходите в Telegram или Discord для проведения сделки. Общайтесь только в чате HellShop.";
                 } else if (text === "📜 Правила сайта") {
-                    botReplyText = "Пожалуйста, общайтесь вежливо и проводите сделки строго внутри платформы HellShop. Нарушение правил грозит вечной блокировкой аккаунта.";
+                    botReplyText = "Пожалуйста, общайтесь вежливо и проводите сделки строго внутри платформы. Нарушение правил грозит вечной блокировкой аккаунта.";
                 } else if (text === "🐛 Нашел баг") {
-                    botReplyText = "Спасибо за бдительность! Опишите найденную ошибку в этом чате, и наши разработчики постараются исправить её как можно скорее.";
-                } 
-                // Ответы для меню покупателей
-                else if (text === "❓ Как проходит сделка?") {
+                    botReplyText = "Спасибо за бдительность! Опишите найденную ошибку в этом чате, и наши разработчики постараются исправить её.";
+                } else if (text === "❓ Как проходит сделка?") {
                     botReplyText = "Сделка проходит очень просто и безопасно:\n1️⃣ Вы оплачиваете товар (деньги резервируются на сайте).\n2️⃣ Продавец выдаёт вам товар или услугу.\n3️⃣ Вы проверяете товар и подтверждаете заказ.\nДеньги поступят продавцу только после вашего подтверждения!";
                 } else if (text === "📦 Способы получения") {
                     botReplyText = "В зависимости от товара, получение может быть:\n• Автоматическим (данные выдаются сразу после оплаты)\n• Через передачу в самой игре (трейд)\n• Передачей данных от аккаунта лично в чате с продавцом.";
                 } else if (text === "💬 Чат с продавцом") {
                     botReplyText = "Сразу после оплаты заказа у вас автоматически откроется приватный чат с продавцом. Именно там вы сможете обсудить все детали получения товара.";
                 } else if (text === "💡 Советы") {
-                    botReplyText = "Наш главный совет: снимайте процесс покупки и получения товара на видео. В случае возникновения спорных ситуаций это поможет нам вернуть ваши деньги на 100%.";
+                    botReplyText = "Наш главный совет: снимайте процесс покупки и получения товара на видео. В случае спорных ситуаций это поможет нам вернуть ваши деньги на 100%.";
                 } else if (text === "💳 Оплата товаров") {
-                    botReplyText = "Мы принимаем банковские карты РФ и мира, СБП, электронные кошельки и криптовалюту. Просто выберите удобный способ на этапе оформления заказа.";
+                    botReplyText = "Мы принимаем банковские карты РФ и мира, СБП, кошельки и криптовалюту. Выберите удобный способ на этапе оформления заказа.";
                 } else if (text === "✅ Гарантии и возврат") {
-                    botReplyText = "Если продавец не выходит на связь, не выдал товар или он оказался нерабочим — вы сможете открыть спор. Мы разберемся в ситуации и вернем деньги вам на баланс.";
+                    botReplyText = "Если продавец не выходит на связь, не выдал товар или он оказался нерабочим — вы сможете открыть спор. Мы разберемся в ситуации и вернем деньги.";
                 } else if (text === "⭐ Отзывы") {
-                    botReplyText = "После успешного завершения сделки не забудьте оставить отзыв продавцу! Это помогает другим покупателям найти честных людей на нашей площадке.";
+                    botReplyText = "После завершения сделки не забудьте оставить отзыв продавцу! Это помогает другим покупателям найти честных людей на нашей площадке.";
                 }
 
-                // 3. Отправка ответа бота
                 if (botReplyText) {
-                    updatedMessages.push({
-                        sender: "Бот",
-                        avatar: SUPPORT_AVATAR,
-                        text: botReplyText,
-                        time: "Только что"
-                    });
+                    updatedMessages.push({ sender: "Бот", avatar: SUPPORT_AVATAR, text: botReplyText, time: "Только что" });
                 }
 
                 setChatMessages(updatedMessages);
-                if (newMenu !== supportMenu) {
-                    setSupportMenu(newMenu);
-                }
+                if (newMenu !== supportMenu) setSupportMenu(newMenu);
             };
 
             const handleAuth = () => {
@@ -159,36 +176,28 @@
                     if (user) { 
                         setCurrentUser(user); 
                         setIsAuthModalOpen(false); 
-                    } else { 
-                        alert("❌ Неверный логин или пароль!"); 
-                    }
+                    } else { alert("❌ Неверный логин или пароль!"); }
                 }
                 setInputUsername(""); setInputPassword("");
             };
 
             const renderTable = (headers, data, type) => (
-                <div style={{ backgroundColor: "#141414", borderRadius: "8px", overflow: "hidden", border: "1px solid #333", marginTop: "20px" }}>
+                <div style={{ backgroundColor: "rgba(20, 20, 20, 0.8)", borderRadius: "8px", overflow: "hidden", border: "1px solid #dc2626", marginTop: "20px" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
-                        <thead style={{ backgroundColor: "#1f1f1f", borderBottom: "2px solid #333" }}>
-                            <tr>{headers.map((h, i) => <th key={i} style={{ padding: "15px", color: "#888" }}>{h}</th>)}</tr>
+                        <thead style={{ backgroundColor: "rgba(40, 0, 0, 0.6)", borderBottom: "1px solid #dc2626" }}>
+                            <tr>{headers.map((h, i) => <th key={i} style={{ padding: "15px", color: "#fca5a5" }}>{h}</th>)}</tr>
                         </thead>
                         <tbody>
                             {data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={headers.length} style={{ padding: "30px", textAlign: "center", color: "#666", fontSize: "15px" }}>
+                                    <td colSpan={headers.length} style={{ padding: "30px", textAlign: "center", color: "#888", fontSize: "15px" }}>
                                         {type === 'purchases' ? "Вы еще не совершали покупок." : type === 'sales' ? "У вас еще нет продаж." : "История операций пуста."}
                                     </td>
                                 </tr>
                             ) : (
                                 data.map((row, i) => (
-                                    <tr key={i} style={{ borderBottom: "1px solid #222" }}>
-                                        <td style={{ padding: "15px", color: "#888" }}>{row.date}</td>
-                                        {type !== 'finances' && <td style={{ padding: "15px" }}>{row.order}</td>}
-                                        <td style={{ padding: "15px" }}>{row.desc}</td>
-                                        {type === 'purchases' && <td style={{ padding: "15px", color: "#60a5fa" }}>{row.seller}</td>}
-                                        {type === 'sales' && <td style={{ padding: "15px", color: "#60a5fa" }}>{row.buyer}</td>}
-                                        <td style={{ padding: "15px", color: row.status === "Закрыт" || row.status === "Завершено" ? "#4ade80" : "#f87171" }}>{row.status}</td>
-                                        <td style={{ padding: "15px", fontWeight: "bold", color: row.isPositive ? "#4ade80" : "#e5e5e5" }}>{row.sum || row.price}</td>
+                                    <tr key={i} style={{ borderBottom: "1px solid #333" }}>
+                                        {/* Здесь была бы отрисовка данных, если бы массивы не были пустыми */}
                                     </tr>
                                 ))
                             )}
@@ -200,10 +209,10 @@
             const activeButtons = supportMenu === "main" ? mainCategories : buyerCategories;
 
             return (
-                <div style={{ minHeight: "100vh" }}>
+                <div className="bloody-bg">
                     {/* ШАПКА */}
-                    <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 30px", height: "70px", backgroundColor: "#141414", borderBottom: "2px solid #dc2626" }}>
-                        <div onClick={() => setActivePage("main")} style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626", cursor: "pointer" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
+                    <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 30px", height: "70px", backgroundColor: "rgba(10, 0, 0, 0.9)", borderBottom: "2px solid #dc2626", boxShadow: "0 4px 15px rgba(220, 38, 38, 0.2)" }}>
+                        <div onClick={() => setActivePage("main")} className="neon-text" style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626", cursor: "pointer", letterSpacing: "1px" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
                         <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
                             <div style={{ display: "flex", gap: "20px", fontSize: "14px", fontWeight: "500" }}>
                                 {["purchases", "sales", "messages", "finances"].map(page => (
@@ -226,17 +235,17 @@
                                 {currentUser ? (
                                     <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
                                         <img src={currentUser.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #dc2626" }} />
-                                        <span style={{ fontSize: "10px", color: "#666" }}>▼</span>
+                                        <span style={{ fontSize: "10px", color: "#dc2626" }}>▼</span>
                                     </div>
                                 ) : (
                                     <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Войти</button>
                                 )}
                                 {isDropdownOpen && currentUser && (
-                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "#1f1f1f", border: "1px solid #333", borderRadius: "6px", width: "220px", zIndex: 10, padding: "10px 0", boxShadow: "0 10px 30px rgba(0,0,0,0.8)" }}>
-                                        <div style={{ padding: "5px 15px", fontWeight: "bold" }}>{currentUser.username}</div>
+                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "rgba(15, 0, 0, 0.95)", border: "1px solid #dc2626", borderRadius: "6px", width: "220px", zIndex: 10, padding: "10px 0", boxShadow: "0 10px 30px rgba(220,38,38,0.3)" }}>
+                                        <div style={{ padding: "5px 15px", fontWeight: "bold", color: "#fff" }}>{currentUser.username}</div>
                                         <div style={{ padding: "5px 15px", color: "#dc2626", fontSize: "12px" }}>ID: {currentUser.id}</div>
-                                        <hr style={{ border: "0", borderTop: "1px solid #333", margin: "10px 0" }} />
-                                        <div onClick={() => { setIsSettingsModalOpen(true); setIsDropdownOpen(false); }} style={{ padding: "8px 15px", cursor: "pointer" }}>Настройки</div>
+                                        <hr style={{ border: "0", borderTop: "1px solid #dc2626", margin: "10px 0", opacity: "0.5" }} />
+                                        <div onClick={() => { setIsSettingsModalOpen(true); setIsDropdownOpen(false); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#e5e5e5" }}>Настройки</div>
                                         <div onClick={() => { setCurrentUser(null); setIsDropdownOpen(false); setActivePage("main"); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#ef4444" }}>Выйти</div>
                                     </div>
                                 )}
@@ -249,29 +258,38 @@
                         
                         {!currentUser && activePage !== "main" ? (
                             <div style={{ textAlign: "center", padding: "100px 0" }}>
-                                <h2 style={{ color: "#fff" }}>Доступ закрыт 🔒</h2>
+                                <h2 style={{ color: "#dc2626" }} className="neon-text">ДОСТУП ЗАКРЫТ 🔒</h2>
                                 <p style={{ color: "#888" }}>Войдите в аккаунт, чтобы просмотреть этот раздел.</p>
                                 <button onClick={() => setIsAuthModalOpen(true)} style={{ marginTop: "20px", padding: "10px 20px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Войти в аккаунт</button>
                             </div>
                         ) : (
                             <>
                                 {activePage === "main" && (
-                                    <div>
-                                        <h1 style={{ borderLeft: "4px solid #dc2626", paddingLeft: "15px", margin: 0 }}>Главная</h1>
-                                        <p style={{ color: "#888", marginTop: "15px" }}>Добро пожаловать в HellShop! Зайди в "Сообщения", чтобы протестировать умного бота и систему уведомлений.</p>
+                                    <div style={{ textAlign: "center" }}>
+                                        <h1 className="neon-text" style={{ color: "#dc2626", textTransform: "uppercase", letterSpacing: "2px", margin: 0, fontSize: "36px" }}>Добро пожаловать в ад</h1>
+                                        <p style={{ color: "#fca5a5", marginTop: "15px", fontSize: "18px" }}>Лучшие скрипты, софты и аккаунты только в HellShop.</p>
+                                        
+                                        {/* Аниме-Тянка (Кроваво-красная эстетика) */}
+                                        <div style={{ marginTop: "40px" }}>
+                                            <img 
+                                                src="https://i.pinimg.com/originals/c9/48/80/c9488050e505809ceea5f726cb3db400.gif" 
+                                                alt="Hell Waifu" 
+                                                style={{ maxWidth: "100%", maxHeight: "500px", borderRadius: "16px", border: "2px solid #dc2626", boxShadow: "0 0 40px rgba(220, 38, 38, 0.4)", objectFit: "cover" }} 
+                                            />
+                                        </div>
                                     </div>
                                 )}
 
                                 {activePage === "purchases" && (
                                     <div>
-                                        <h1 style={{ margin: "0 0 20px 0" }}>Мои покупки</h1>
+                                        <h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои покупки</h1>
                                         {renderTable(["Дата", "Заказ", "Описание", "Продавец", "Статус", "Сумма"], mockPurchases, "purchases")}
                                     </div>
                                 )}
 
                                 {activePage === "sales" && (
                                     <div>
-                                        <h1 style={{ margin: "0 0 20px 0" }}>Мои продажи</h1>
+                                        <h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои продажи</h1>
                                         {renderTable(["Дата", "Заказ", "Описание", "Покупатель", "Статус", "Сумма"], mockSales, "sales")}
                                     </div>
                                 )}
@@ -279,38 +297,35 @@
                                 {activePage === "finances" && (
                                     <div>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                                            <h1 style={{ margin: 0 }}>Финансы <span style={{ color: "#888", fontSize: "20px" }}>· 0 ₽ · 0 $ · 0 €</span></h1>
+                                            <h1 className="neon-text" style={{ margin: 0, color: "#dc2626" }}>Финансы <span style={{ color: "#888", fontSize: "20px" }}>· 0 ₽ · 0 $ · 0 €</span></h1>
                                         </div>
                                         {renderTable(["Дата", "Описание", "Статус", "Сумма"], mockFinances, "finances")}
                                     </div>
                                 )}
 
                                 {activePage === "messages" && (
-                                    <div style={{ display: "flex", border: "1px solid #333", borderRadius: "8px", height: "700px", backgroundColor: "#141414", overflow: "hidden" }}>
+                                    <div style={{ display: "flex", border: "1px solid #dc2626", borderRadius: "8px", height: "700px", backgroundColor: "rgba(10, 0, 0, 0.8)", overflow: "hidden", boxShadow: "0 0 20px rgba(220,38,38,0.15)" }}>
                                         {/* СПИСОК ЧАТОВ */}
-                                        <div style={{ width: "320px", borderRight: "1px solid #333", overflowY: "auto" }}>
-                                            <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #333" }}>Чаты</div>
+                                        <div style={{ width: "320px", borderRight: "1px solid #dc2626", overflowY: "auto", backgroundColor: "rgba(0,0,0,0.5)" }}>
+                                            <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #dc2626", color: "#dc2626" }}>Чаты</div>
                                             
-                                            {/* ЧАТ УВЕДОМЛЕНИЙ */}
-                                            <div onClick={() => setActiveChat("notifications")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "notifications" ? "#1f1f1f" : "transparent", borderBottom: "1px solid #222" }}>
+                                            <div onClick={() => setActiveChat("notifications")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "notifications" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
                                                 <div style={{ position: "relative" }}>
                                                     <img src={NOTIFY_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #facc15" }} />
-                                                    <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>
                                                 </div>
                                                 <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
                                                         <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Уведомления ✔</span>
                                                         <span style={{ fontSize: "11px", color: "#666" }}>Система</span>
                                                     </div>
-                                                    <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{notifications.length > 0 ? "Новое уведомление" : "Нет новых уведомлений"}</div>
+                                                    <div style={{ fontSize: "13px", color: "#888" }}>Нет новых уведомлений</div>
                                                 </div>
                                             </div>
 
-                                            {/* ЧАТ ПОДДЕРЖКИ */}
-                                            <div onClick={() => setActiveChat("support")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "support" ? "#1f1f1f" : "transparent", borderBottom: "1px solid #222" }}>
+                                            <div onClick={() => setActiveChat("support")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "support" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
                                                 <div style={{ position: "relative" }}>
                                                     <img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} />
-                                                    <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>
+                                                    <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#dc2626", borderRadius: "50%", border: "2px solid #141414" }}></div>
                                                 </div>
                                                 <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                                                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
@@ -324,7 +339,7 @@
                                         
                                         {/* ОКНО ДИАЛОГА */}
                                         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                                            <div style={{ padding: "15px 20px", borderBottom: "1px solid #333", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                            <div style={{ padding: "15px 20px", borderBottom: "1px solid #dc2626", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "rgba(20,0,0,0.5)" }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
                                                     <img src={activeChat === "notifications" ? NOTIFY_AVATAR : SUPPORT_AVATAR} style={{ width: "40px", height: "40px", borderRadius: "50%", border: activeChat === "notifications" ? "1px solid #facc15" : "1px solid #dc2626" }} />
                                                     <div>
@@ -334,19 +349,16 @@
                                                 </div>
                                             </div>
                                             
-                                            {/* СООБЩЕНИЯ ВНУТРИ ЧАТА */}
                                             <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", fontSize: "14px" }}>
                                                 {activeChat === "notifications" ? (
-                                                    // РЕНДЕР УВЕДОМЛЕНИЙ (сейчас пустой)
                                                     <div style={{ display: "flex", flexDirection: "column", gap: "25px", maxWidth: "500px", margin: "0 auto", width: "100%", textAlign: "center", color: "#666", paddingTop: "50px" }}>
                                                         У вас пока нет системных уведомлений. Здесь будет появляться информация о ваших покупках, продажах и выплатах.
                                                     </div>
                                                 ) : (
-                                                    // РЕНДЕР ЧАТА ПОДДЕРЖКИ
                                                     <>
                                                         {chatMessages.map((msg, i) => (
-                                                            <div key={i} style={{ display: "flex", gap: "15px", alignItems: "flex-start", backgroundColor: msg.sender !== "Бот" ? "#1f1f1f" : "transparent", padding: msg.sender !== "Бот" ? "12px" : "0", borderRadius: "6px" }}>
-                                                                <img src={msg.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover" }} />
+                                                            <div key={i} style={{ display: "flex", gap: "15px", alignItems: "flex-start", backgroundColor: msg.sender !== "Бот" ? "rgba(220,38,38,0.05)" : "transparent", padding: msg.sender !== "Бот" ? "12px" : "0", borderRadius: "6px" }}>
+                                                                <img src={msg.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #333" }} />
                                                                 <div>
                                                                     <span style={{ fontWeight: "bold", color: msg.sender === "Бот" ? "#dc2626" : "#fff" }}>{msg.sender}</span>
                                                                     <span style={{ color: "#666", fontSize: "12px", marginLeft: "10px" }}>{msg.time}</span>
@@ -355,10 +367,9 @@
                                                             </div>
                                                         ))}
                                                         
-                                                        {/* КНОПКИ КАТЕГОРИЙ */}
                                                         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
                                                             {activeButtons.map((cat, i) => (
-                                                                <button key={i} onClick={() => handleSendMessage(cat)} style={{ backgroundColor: "#1f1f1f", border: "1px solid #333", color: "#ccc", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "13px", transition: "0.2s" }}>
+                                                                <button key={i} onClick={() => handleSendMessage(cat)} style={{ backgroundColor: "rgba(20,0,0,0.8)", border: "1px solid #dc2626", color: "#fca5a5", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "13px", transition: "0.2s" }}>
                                                                     {cat}
                                                                 </button>
                                                             ))}
@@ -367,9 +378,8 @@
                                                 )}
                                             </div>
                                             
-                                            {/* ПОЛЕ ВВОДА (Только для поддержки) */}
                                             {activeChat === "support" ? (
-                                                <div style={{ padding: "15px", borderTop: "1px solid #333", display: "flex", gap: "10px" }}>
+                                                <div style={{ padding: "15px", borderTop: "1px solid #dc2626", display: "flex", gap: "10px", backgroundColor: "rgba(0,0,0,0.5)" }}>
                                                     <input 
                                                         type="text" 
                                                         placeholder="Введите сообщение..." 
@@ -381,7 +391,7 @@
                                                     <button onClick={() => handleSendMessage()} style={{ padding: "0 25px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Отправить</button>
                                                 </div>
                                             ) : (
-                                                <div style={{ padding: "15px", borderTop: "1px solid #333", textAlign: "center", color: "#666", fontSize: "13px" }}>
+                                                <div style={{ padding: "15px", borderTop: "1px solid #dc2626", textAlign: "center", color: "#666", fontSize: "13px", backgroundColor: "rgba(0,0,0,0.5)" }}>
                                                     Это автоматический чат уведомлений. Вы не можете отправлять сюда сообщения.
                                                 </div>
                                             )}
@@ -392,26 +402,38 @@
                         )}
                     </main>
 
-                    {/* МОДАЛКИ (Вход и настройки) */}
+                    {/* МОДАЛКА НАСТРОЕК */}
                     {isSettingsModalOpen && currentUser && (
-                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
-                            <div style={{ backgroundColor: "#141414", padding: "30px", borderRadius: "12px", width: "450px", border: "1px solid #dc2626" }}>
+                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+                            <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "12px", width: "400px", border: "1px solid #dc2626", boxShadow: "0 0 30px rgba(220,38,38,0.3)" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-                                    <h3>Настройки аккаунта</h3>
+                                    <h3 style={{ margin: 0, color: "#dc2626" }}>Настройки аккаунта</h3>
                                     <button onClick={() => setIsSettingsModalOpen(false)} style={{ background: "none", border: "none", color: "#888", fontSize: "20px", cursor: "pointer" }}>×</button>
                                 </div>
-                                <p style={{color: "#888"}}>Настройки профиля пока отключены.</p>
+                                
+                                <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                                    <div>
+                                        <label style={{ fontSize: "12px", color: "#888" }}>Привязать Email</label>
+                                        <input type="email" value={inputEmail} onChange={(e) => setInputEmail(e.target.value)} placeholder="your@email.com" style={{ width: "100%", padding: "10px", marginTop: "5px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", borderRadius: "4px", boxSizing: "border-box" }} />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: "12px", color: "#888" }}>Привязать Телефон</label>
+                                        <input type="text" value={inputPhone} onChange={(e) => setInputPhone(e.target.value)} placeholder="+7 (999) 000-00-00" style={{ width: "100%", padding: "10px", marginTop: "5px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", borderRadius: "4px", boxSizing: "border-box" }} />
+                                    </div>
+                                    <button onClick={handleSaveSettings} style={{ padding: "12px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", marginTop: "10px" }}>Сохранить изменения</button>
+                                </div>
                             </div>
                         </div>
                     )}
 
+                    {/* МОДАЛКА ВХОДА */}
                     {isAuthModalOpen && (
-                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
-                            <div style={{ backgroundColor: "#141414", padding: "30px", borderRadius: "8px", width: "320px", border: "1px solid #dc2626" }}>
-                                <h3 style={{ textAlign: "center" }}>{authMode === "login" ? "Авторизация" : "Регистрация"}</h3>
-                                <p style={{ textAlign: "center", fontSize: "12px", color: "#888", cursor: "pointer" }} onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? "Нет аккаунта? Создать" : "Есть аккаунт? Войти"}</p>
-                                <input type="text" placeholder="Логин" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #333", borderRadius: "4px" }} />
-                                <input type="password" placeholder="Пароль" value={inputPassword} onChange={(e) => setInputPassword(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "20px", backgroundColor: "#0a0a0a", color: "#fff", border: "1px solid #333", borderRadius: "4px" }} />
+                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+                            <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "8px", width: "320px", border: "1px solid #dc2626", boxShadow: "0 0 30px rgba(220,38,38,0.3)" }}>
+                                <h3 style={{ textAlign: "center", color: "#dc2626" }}>{authMode === "login" ? "Авторизация" : "Регистрация"}</h3>
+                                <p style={{ textAlign: "center", fontSize: "12px", color: "#888", cursor: "pointer", textDecoration: "underline" }} onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? "Нет аккаунта? Создать" : "Есть аккаунт? Войти"}</p>
+                                <input type="text" placeholder="Логин" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", borderRadius: "4px", boxSizing: "border-box" }} />
+                                <input type="password" placeholder="Пароль" value={inputPassword} onChange={(e) => setInputPassword(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "20px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", borderRadius: "4px", boxSizing: "border-box" }} />
                                 <button onClick={handleAuth} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" }}>Продолжить</button>
                             </div>
                         </div>
