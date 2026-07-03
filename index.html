@@ -82,6 +82,19 @@
 
             const [supportMenu, setSupportMenu] = React.useState(() => localStorage.getItem("hellshop_supportMenu") || "main");
 
+            // --- ИСПРАВЛЕНИЕ: ОЧИСТКА ПРИ ЗАПУСКЕ (ОДНОРАЗОВАЯ) ---
+            React.useEffect(() => {
+                // Если база пользователей пуста, выполняем одноразовую очистку localStorage
+                // Это гарантирует, что мы начнем с чистого листа.
+                if (!localStorage.getItem("hellshop_users_cleaned")) {
+                    localStorage.clear();
+                    localStorage.setItem("hellshop_users_cleaned", "true"); // Устанавливаем флаг очистки
+                    alert("🔥 База данных очищена! Пожалуйста, зарегистрируйтесь снова.");
+                    // Перезагружаем страницу, чтобы React обновил состояние с пустыми данными
+                    window.location.reload();
+                }
+            }, []);
+
             // ПОДКЛЮЧЕНИЕ К FIREBASE
             React.useEffect(() => {
                 const usersRef = db.ref('users');
@@ -90,8 +103,9 @@
                     if (data) {
                         setUsersDatabase(Object.values(data));
                     } else {
-                        const creator = { id: 100001, username: "hellwhyworker", password: "123", avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Всемогущий", isOnline: false };
-                        db.ref('users/100001').set(creator);
+                        // База пользователей теперь полностью пуста при загрузке.
+                        // Всемогущий должен быть удален.
+                        setUsersDatabase([]);
                     }
                 });
 
@@ -100,6 +114,8 @@
                     const data = snapshot.val();
                     if (data) {
                         setPrivateMessages(Object.values(data));
+                    } else {
+                        setPrivateMessages([]);
                     }
                 });
             }, []);
@@ -206,17 +222,39 @@
                 if (authMode === "register") {
                     if (usersDatabase.find(u => u.username === inputUsername)) return alert("❌ Ник занят!");
                     
-                    const maxId = usersDatabase.length > 0 
-                        ? Math.max(...usersDatabase.map(u => u.id || 100000)) 
-                        : 100000;
+                    // --- ИСПРАВЛЕННАЯ ЛОГИКА ГЕНЕРАЦИИ ID ПРИ ПОЛНОЙ ОЧИСТКЕ Базы ---
+                    // База пользователей полностью пуста. ID новых пользователей должны начинаться с 100001.
+                    // И первый пользователь должен получить роль "Всемогущий".
                     
-                    const newId = maxId + 1; 
+                    // Находим максимальный ID в базе, если база пуста - начинаем с 100000
+                    const isFirstUser = usersDatabase.length === 0;
+                    const maxId = isFirstUser 
+                        ? 100000 
+                        : Math.max(...usersDatabase.map(u => u.id || 100000));
                     
-                    const newUser = { id: newId, username: inputUsername, password: inputPassword, avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Пользователь", isOnline: true };
+                    const newId = maxId + 1; // Увеличиваем ровно на 1 от самого большого
+                    const userRole = isFirstUser ? "Всемогущий" : "Пользователь"; // Первый пользователь - админ
+                    
+                    const newUser = { 
+                        id: newId, 
+                        username: inputUsername, 
+                        password: inputPassword, 
+                        avatar: DEFAULT_AVATAR, 
+                        email: "", 
+                        phone: "", 
+                        role: userRole, 
+                        isOnline: true 
+                    };
                     
                     db.ref('users/' + newId).set(newUser);
                     setCurrentUser(newUser); 
                     localStorage.setItem("hellshop_currentUser", JSON.stringify(newUser));
+                    
+                    // --- ИСПРАВЛЕНИЕ: ЧАТЫ НОВОРЕГОВ ПУСТЫ ПО УМОЛЧАНИЮ ---
+                    // Мы очистили localStorage при загрузке, поэтому openedChats и так пуст.
+                    // И мы не добавляем его Всемогущего в FirebaseopenedChats.
+                    // setChatMessages([]); // Очистить локальные сообщения чата поддержки
+                    
                     setIsAuthModalOpen(false);
                 } else {
                     const user = usersDatabase.find(u => u.username === inputUsername && u.password === inputPassword);
@@ -246,6 +284,7 @@
                     setOpenedChats([userId, ...openedChats]);
                 }
                 setActiveChat(userId);
+                setActivePage("messages");
                 setSearchQuery(""); 
             };
 
@@ -392,8 +431,9 @@
                             <>
                                 {activePage === "main" && (
                                     <div style={{ textAlign: "center", paddingTop: "50px" }}>
-                                        <h1 className="neon-text" style={{ color: "#dc2626", textTransform: "uppercase", letterSpacing: "2px", margin: 0, fontSize: "36px" }}>Добро пожаловать в ад</h1>
-                                        <p style={{ color: "#fca5a5", marginTop: "15px", fontSize: "18px" }}>Лучшие скрипты, софты и аккаунты только в HellShop.</p>
+                                        {/* ИСПРАВЛЕНИЕ ЗАГОЛОВКА ДЛЯ Всемогущего */}
+                                        <h1 className="neon-text" style={{ color: "#dc2626", textTransform: "uppercase", letterSpacing: "2px", margin: 0, fontSize: "36px" }}>Ад HellShop ждет тебя</h1>
+                                        <p style={{ color: "#fca5a5", marginTop: "15px", fontSize: "18px" }}>Лучшие скрипты, софты и аккаунты только здесь.</p>
                                     </div>
                                 )}
 
@@ -425,6 +465,7 @@
 
                                             <div style={{ flex: 1, overflowY: "auto" }}>
                                                 {searchQuery.trim() ? (
+                                                    // ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ ПОИСКА
                                                     <div>
                                                         <div style={{ padding: "10px 15px", fontSize: "11px", color: "#dc2626", fontWeight: "bold", textTransform: "uppercase" }}>Глобальный поиск</div>
                                                         {searchResults.length > 0 ? searchResults.map(u => (
@@ -449,6 +490,7 @@
                                                         )}
                                                     </div>
                                                 ) : (
+                                                    // СТАНДАРТНЫЙ СПИСОК ЧАТОВ (Уведомления и Поддержка)
                                                     <>
                                                         <div onClick={() => setActiveChat("notifications")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "notifications" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
                                                             <img src={NOTIFY_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #facc15" }} />
@@ -472,6 +514,7 @@
                                                             </div>
                                                         </div>
 
+                                                        {/* Отображение личных чатов (у новорегов пуст) */}
                                                         {openedChats.map(userId => {
                                                             const u = usersDatabase.find(x => x.id === userId);
                                                             if(!u) return null;
