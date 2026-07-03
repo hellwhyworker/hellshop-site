@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HELLSHOP</title>
+    <!-- ФИРМЕННАЯ ИКОНКА ДЛЯ ВКЛАДКИ БРАУЗЕРА (FAVICON) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23660000'/%3E%3Cpath d='M20 50 L20 30 C20 5, 80 5, 80 30 L80 50 L65 50 L65 70 L55 90 L45 90 L35 70 L35 50 Z' fill='%23141414'/%3E%3Cpath d='M30 45 L45 45 L45 65 L55 65 L55 45 L70 45 L70 55 L55 55 L55 75 L45 75 L45 55 L30 55 Z' fill='%23660000'/%3E%3C/svg%3E">
     
+    <!-- Подключаем React -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -91,6 +93,18 @@
                 }
             }, [isSettingsModalOpen, currentUser]);
 
+            // --- ФУНКЦИЯ ДЛЯ ЗАГРУЗКИ КАРТИНКИ ИЗ ФАЙЛОВ ---
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setInputAvatar(reader.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
             const handleSaveSettings = () => {
                 if (!currentUser) return;
                 const updatedUser = { 
@@ -102,7 +116,6 @@
                 setCurrentUser(updatedUser);
                 setUsersDatabase(usersDatabase.map(u => u.id === currentUser.id ? updatedUser : u));
                 
-                // Обновляем аватарку в старых сообщениях от этого пользователя
                 const updatedChats = chatMessages.map(msg => 
                     msg.sender === currentUser.username ? { ...msg, avatar: updatedUser.avatar } : msg
                 );
@@ -399,10 +412,18 @@
                                 </div>
                                 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                                    {/* НОВАЯ КНОПКА ЗАГРУЗКИ АВАТАРКИ ИЗ ФАЙЛОВ */}
                                     <div>
-                                        <label style={{ fontSize: "12px", color: "#888" }}>Аватарка (URL-ссылка на картинку)</label>
-                                        <input type="text" value={inputAvatar} onChange={(e) => setInputAvatar(e.target.value)} placeholder="https://..." style={{ width: "100%", padding: "10px", marginTop: "5px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", borderRadius: "4px", boxSizing: "border-box" }} />
+                                        <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "8px" }}>Аватарка профиля</label>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                                            <img src={inputAvatar || DEFAULT_AVATAR} style={{ width: "50px", height: "50px", borderRadius: "50%", objectFit: "cover", border: "1px solid #dc2626", backgroundColor: "#141414" }} />
+                                            <label style={{ backgroundColor: "#f3f4f6", color: "#111827", padding: "8px 16px", borderRadius: "4px", fontWeight: "bold", fontSize: "13px", cursor: "pointer", border: "1px solid #d1d5db" }}>
+                                                Изменить аватарку
+                                                <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
+                                            </label>
+                                        </div>
                                     </div>
+
                                     <div>
                                         <label style={{ fontSize: "12px", color: "#888" }}>Привязать Email</label>
                                         <input type="email" value={inputEmail} onChange={(e) => setInputEmail(e.target.value)} placeholder="your@email.com" style={{ width: "100%", padding: "10px", marginTop: "5px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", borderRadius: "4px", boxSizing: "border-box" }} />
