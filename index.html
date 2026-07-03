@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HELLSHOP</title>
-    <!-- Подключаем React -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        /* Добавляем немного магии CSS для кровавого стиля и скроллбаров */
         body { margin: 0; padding: 0; background-color: #050000; color: #e5e5e5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0a0a0a; }
@@ -31,7 +29,6 @@
             { id: 100001, username: "hellwhyworker", password: "123", avatar: DEFAULT_AVATAR, email: "", phone: "" } 
         ];
 
-        // Пустые таблицы
         const mockPurchases = [];
         const mockSales = [];
         const mockFinances = [];
@@ -41,7 +38,6 @@
         const buyerCategories = ["🔙 Назад", "❓ Как проходит сделка?", "📦 Способы получения", "💬 Чат с продавцом", "💡 Советы", "💳 Оплата товаров", "✅ Гарантии и возврат", "⭐ Отзывы"];
 
         function App() {
-            // --- ЛОКАЛЬНОЕ ХРАНИЛИЩЕ ---
             const [usersDatabase, setUsersDatabase] = React.useState(() => {
                 const saved = localStorage.getItem("hellshop_users");
                 return saved ? JSON.parse(saved) : initialUsers;
@@ -55,13 +51,12 @@
             const [chatMessages, setChatMessages] = React.useState(() => {
                 const saved = localStorage.getItem("hellshop_chats");
                 return saved ? JSON.parse(saved) : [
-                    { sender: "Бот", avatar: SUPPORT_AVATAR, text: "Бот поддержки HellShop поможет тебе найти ответ на важные вопросы!\n\nНажимай на кнопки ниже, чтобы выбрать тему своего обращения и получить помощь.\n\nУ HellShop нет поддержки в Telegram, только на сайте.", time: "Система" }
+                    { sender: "Бот", avatar: SUPPORT_AVATAR, text: "Бот поддержки HellShop поможет тебе найти ответ на важные вопросы!\n\nНажимай на кнопки ниже, чтобы выбрать тему своего обращения и получить помощь.", time: "Система" }
                 ];
             });
 
             const [supportMenu, setSupportMenu] = React.useState(() => localStorage.getItem("hellshop_supportMenu") || "main");
 
-            // Сохранение при изменениях
             React.useEffect(() => { localStorage.setItem("hellshop_users", JSON.stringify(usersDatabase)); }, [usersDatabase]);
             React.useEffect(() => { 
                 if (currentUser) localStorage.setItem("hellshop_currentUser", JSON.stringify(currentUser));
@@ -70,7 +65,6 @@
             React.useEffect(() => { localStorage.setItem("hellshop_chats", JSON.stringify(chatMessages)); }, [chatMessages]);
             React.useEffect(() => { localStorage.setItem("hellshop_supportMenu", supportMenu); }, [supportMenu]);
 
-            // --- СОСТОЯНИЯ UI ---
             const [activePage, setActivePage] = React.useState("main"); 
             const [activeChat, setActiveChat] = React.useState("support"); 
             
@@ -79,16 +73,13 @@
             const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
             const [authMode, setAuthMode] = React.useState("login");
             
-            // Инпуты авторизации
             const [inputUsername, setInputUsername] = React.useState("");
             const [inputPassword, setInputPassword] = React.useState("");
             const [typedMessage, setTypedMessage] = React.useState("");
 
-            // Инпуты настроек
             const [inputEmail, setInputEmail] = React.useState("");
             const [inputPhone, setInputPhone] = React.useState("");
 
-            // Подтягиваем данные юзера при открытии настроек
             React.useEffect(() => {
                 if (currentUser && isSettingsModalOpen) {
                     setInputEmail(currentUser.email || "");
@@ -96,7 +87,6 @@
                 }
             }, [isSettingsModalOpen, currentUser]);
 
-            // --- ЛОГИКА СОХРАНЕНИЯ НАСТРОЕК ---
             const handleSaveSettings = () => {
                 if (!currentUser) return;
                 const updatedUser = { ...currentUser, email: inputEmail, phone: inputPhone };
@@ -127,32 +117,32 @@
                 let newMenu = supportMenu;
 
                 if (text === "🛒 Для покупателей") {
-                    botReplyText = "HellShop — это маркетплейс, где продавцы предлагают товары, а покупатели совершают покупки. Все объявления о товарах проходят проверку. У нас более 100.000 товаров по 400+ играм и приложениям.\n\nКак купить товар?\n1️⃣ Нажмите «Купить» на странице объявления о товаре;\n2️⃣ Выберите способ оплаты или используйте баланс на сайте;\n3️⃣ Следуйте инструкции на странице сделки.\n\nВозникли вопросы? Воспользуйтесь 🤖 Ботом, выбрав категорию ниже!";
+                    botReplyText = "HellShop — это маркетплейс, где продавцы предлагают товары, а покупатели совершают покупки.\n\nКак купить товар?\n1️⃣ Нажмите «Купить» на странице объявления;\n2️⃣ Выберите способ оплаты;\n3️⃣ Следуйте инструкции на странице сделки.\n\nВоспользуйтесь кнопками ниже!";
                     newMenu = "buyers";
                 } else if (text === "🤑 Для продавцов") {
-                    botReplyText = "Хотите начать продавать на HellShop?\n1. Зарегистрируйтесь на сайте.\n2. Перейдите в раздел продаж и создайте объявление.\n3. Ожидайте покупателей и зарабатывайте реальные деньги!";
+                    botReplyText = "Хотите начать продавать на HellShop?\n1. Зарегистрируйтесь на сайте.\n2. Создайте объявление.\n3. Ожидайте покупателей!";
                 } else if (text === "💰 Баланс и выплаты") {
-                    botReplyText = "Все операции по балансу прозрачны. Выплаты заработанных средств производятся на банковские карты, кошельки и криптовалюту в срок от 5 минут до 24 часов.";
+                    botReplyText = "Выплаты производятся на банковские карты, кошельки и криптовалюту в срок от 5 минут до 24 часов.";
                 } else if (text === "🔒 Безопасность") {
-                    botReplyText = "Ваши средства надежно защищены системой безопасных сделок. НИКОГДА не переходите в Telegram или Discord для проведения сделки. Общайтесь только в чате HellShop.";
+                    botReplyText = "НИКОГДА не переходите в Telegram или Discord для проведения сделки. Общайтесь только в чате HellShop.";
                 } else if (text === "📜 Правила сайта") {
-                    botReplyText = "Пожалуйста, общайтесь вежливо и проводите сделки строго внутри платформы. Нарушение правил грозит вечной блокировкой аккаунта.";
+                    botReplyText = "Общайтесь вежливо и проводите сделки строго внутри платформы. Нарушение = вечная блокировка.";
                 } else if (text === "🐛 Нашел баг") {
-                    botReplyText = "Спасибо за бдительность! Опишите найденную ошибку в этом чате, и наши разработчики постараются исправить её.";
+                    botReplyText = "Опишите найденную ошибку в этом чате, и мы постараемся исправить её.";
                 } else if (text === "❓ Как проходит сделка?") {
-                    botReplyText = "Сделка проходит очень просто и безопасно:\n1️⃣ Вы оплачиваете товар (деньги резервируются на сайте).\n2️⃣ Продавец выдаёт вам товар или услугу.\n3️⃣ Вы проверяете товар и подтверждаете заказ.\nДеньги поступят продавцу только после вашего подтверждения!";
+                    botReplyText = "Сделка проходит просто:\n1️⃣ Оплата (деньги в резерве).\n2️⃣ Продавец выдаёт товар.\n3️⃣ Вы подтверждаете заказ.";
                 } else if (text === "📦 Способы получения") {
-                    botReplyText = "В зависимости от товара, получение может быть:\n• Автоматическим (данные выдаются сразу после оплаты)\n• Через передачу в самой игре (трейд)\n• Передачей данных от аккаунта лично в чате с продавцом.";
+                    botReplyText = "Получение может быть:\n• Автоматическим\n• Через трейд\n• Лично в чате с продавцом.";
                 } else if (text === "💬 Чат с продавцом") {
-                    botReplyText = "Сразу после оплаты заказа у вас автоматически откроется приватный чат с продавцом. Именно там вы сможете обсудить все детали получения товара.";
+                    botReplyText = "После оплаты у вас автоматически откроется чат с продавцом.";
                 } else if (text === "💡 Советы") {
-                    botReplyText = "Наш главный совет: снимайте процесс покупки и получения товара на видео. В случае спорных ситуаций это поможет нам вернуть ваши деньги на 100%.";
+                    botReplyText = "Совет: снимайте процесс покупки на видео. Это поможет вернуть деньги при споре.";
                 } else if (text === "💳 Оплата товаров") {
-                    botReplyText = "Мы принимаем банковские карты РФ и мира, СБП, кошельки и криптовалюту. Выберите удобный способ на этапе оформления заказа.";
+                    botReplyText = "Мы принимаем карты РФ и мира, СБП и крипту.";
                 } else if (text === "✅ Гарантии и возврат") {
-                    botReplyText = "Если продавец не выходит на связь, не выдал товар или он оказался нерабочим — вы сможете открыть спор. Мы разберемся в ситуации и вернем деньги.";
+                    botReplyText = "Если продавец не выдал товар — откройте спор, мы вернем деньги.";
                 } else if (text === "⭐ Отзывы") {
-                    botReplyText = "После завершения сделки не забудьте оставить отзыв продавцу! Это помогает другим покупателям найти честных людей на нашей площадке.";
+                    botReplyText = "Не забывайте оставлять отзывы после сделки!";
                 }
 
                 if (botReplyText) {
@@ -188,19 +178,11 @@
                             <tr>{headers.map((h, i) => <th key={i} style={{ padding: "15px", color: "#fca5a5" }}>{h}</th>)}</tr>
                         </thead>
                         <tbody>
-                            {data.length === 0 ? (
-                                <tr>
-                                    <td colSpan={headers.length} style={{ padding: "30px", textAlign: "center", color: "#888", fontSize: "15px" }}>
-                                        {type === 'purchases' ? "Вы еще не совершали покупок." : type === 'sales' ? "У вас еще нет продаж." : "История операций пуста."}
-                                    </td>
-                                </tr>
-                            ) : (
-                                data.map((row, i) => (
-                                    <tr key={i} style={{ borderBottom: "1px solid #333" }}>
-                                        {/* Здесь была бы отрисовка данных, если бы массивы не были пустыми */}
-                                    </tr>
-                                ))
-                            )}
+                            <tr>
+                                <td colSpan={headers.length} style={{ padding: "30px", textAlign: "center", color: "#888", fontSize: "15px" }}>
+                                    {type === 'purchases' ? "Вы еще не совершали покупок." : type === 'sales' ? "У вас еще нет продаж." : "История операций пуста."}
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -269,12 +251,21 @@
                                         <h1 className="neon-text" style={{ color: "#dc2626", textTransform: "uppercase", letterSpacing: "2px", margin: 0, fontSize: "36px" }}>Добро пожаловать в ад</h1>
                                         <p style={{ color: "#fca5a5", marginTop: "15px", fontSize: "18px" }}>Лучшие скрипты, софты и аккаунты только в HellShop.</p>
                                         
-                                        {/* Аниме-Тянка (Кроваво-красная эстетика) */}
+                                        {/* Аниме-Тянка с кровавым CSS-фильтром */}
                                         <div style={{ marginTop: "40px" }}>
                                             <img 
-                                                src="https://i.pinimg.com/originals/c9/48/80/c9488050e505809ceea5f726cb3db400.gif" 
+                                                src="https://i.pinimg.com/736x/21/df/b8/21dfb8582ba97ab743a6a12b4ba79275.jpg" 
                                                 alt="Hell Waifu" 
-                                                style={{ maxWidth: "100%", maxHeight: "500px", borderRadius: "16px", border: "2px solid #dc2626", boxShadow: "0 0 40px rgba(220, 38, 38, 0.4)", objectFit: "cover" }} 
+                                                style={{ 
+                                                    maxWidth: "100%", 
+                                                    maxHeight: "500px", 
+                                                    borderRadius: "16px", 
+                                                    border: "2px solid #dc2626", 
+                                                    boxShadow: "0 0 40px rgba(220, 38, 38, 0.6)", 
+                                                    objectFit: "cover",
+                                                    /* МАГИЯ ТУТ: делает черно-белую картинку кроваво-красной */
+                                                    filter: "grayscale(100%) sepia(100%) hue-rotate(315deg) saturate(500%) contrast(1.2)"
+                                                }} 
                                             />
                                         </div>
                                     </div>
@@ -305,7 +296,6 @@
 
                                 {activePage === "messages" && (
                                     <div style={{ display: "flex", border: "1px solid #dc2626", borderRadius: "8px", height: "700px", backgroundColor: "rgba(10, 0, 0, 0.8)", overflow: "hidden", boxShadow: "0 0 20px rgba(220,38,38,0.15)" }}>
-                                        {/* СПИСОК ЧАТОВ */}
                                         <div style={{ width: "320px", borderRight: "1px solid #dc2626", overflowY: "auto", backgroundColor: "rgba(0,0,0,0.5)" }}>
                                             <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #dc2626", color: "#dc2626" }}>Чаты</div>
                                             
@@ -337,7 +327,6 @@
                                             </div>
                                         </div>
                                         
-                                        {/* ОКНО ДИАЛОГА */}
                                         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                                             <div style={{ padding: "15px 20px", borderBottom: "1px solid #dc2626", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "rgba(20,0,0,0.5)" }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
@@ -352,7 +341,7 @@
                                             <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", fontSize: "14px" }}>
                                                 {activeChat === "notifications" ? (
                                                     <div style={{ display: "flex", flexDirection: "column", gap: "25px", maxWidth: "500px", margin: "0 auto", width: "100%", textAlign: "center", color: "#666", paddingTop: "50px" }}>
-                                                        У вас пока нет системных уведомлений. Здесь будет появляться информация о ваших покупках, продажах и выплатах.
+                                                        У вас пока нет системных уведомлений.
                                                     </div>
                                                 ) : (
                                                     <>
