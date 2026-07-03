@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HELLSHOP</title>
-    <!-- ФИРМЕННАЯ ИКОНКА ДЛЯ ВКЛАДКИ БРАУЗЕРА (FAVICON) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23660000'/%3E%3Cpath d='M20 50 L20 30 C20 5, 80 5, 80 30 L80 50 L65 50 L65 70 L55 90 L45 90 L35 70 L35 50 Z' fill='%23141414'/%3E%3Cpath d='M30 45 L45 45 L45 65 L55 65 L55 45 L70 45 L70 55 L55 55 L55 75 L45 75 L45 55 L30 55 Z' fill='%23660000'/%3E%3C/svg%3E">
     
-    <!-- Подключаем React -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -19,6 +17,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #dc2626; }
         .bloody-bg { background: linear-gradient(180deg, #1a0000 0%, #050000 100%); min-height: 100vh; }
         .neon-text { text-shadow: 0 0 10px rgba(220, 38, 38, 0.7); }
+        .search-input::placeholder { color: #888; }
     </style>
 </head>
 <body>
@@ -29,8 +28,9 @@
         const SUPPORT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 15 L25 35 L25 65 L50 85 L75 65 L75 35 Z" fill="%23dc2626"/><circle cx="50" cy="45" r="10" fill="%23141414"/><path d="M35 70 C 35 55, 65 55, 65 70 Z" fill="%23141414"/></svg>`;
         const NOTIFY_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 20 C35 20, 30 35, 30 50 L25 70 L75 70 L70 50 C70 35, 65 20, 50 20 Z" fill="%23facc15"/><circle cx="50" cy="80" r="7" fill="%23facc15"/></svg>`;
 
+        // Добавлена роль Всемогущий для создателя
         const initialUsers = [
-            { id: 100001, username: "hellwhyworker", password: "123", avatar: DEFAULT_AVATAR, email: "", phone: "" } 
+            { id: 100001, username: "hellwhyworker", password: "123", avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Всемогущий" } 
         ];
 
         const mockPurchases = [];
@@ -41,7 +41,16 @@
         const mainCategories = ["🛒 Для покупателей", "🤑 Для продавцов", "💰 Баланс и выплаты", "🔒 Безопасность", "📜 Правила сайта", "🐛 Нашел баг"];
         const buyerCategories = ["🔙 Назад", "❓ Как проходит сделка?", "📦 Способы получения", "💬 Чат с продавцом", "💡 Советы", "💳 Оплата товаров", "✅ Гарантии и возврат", "⭐ Отзывы"];
 
+        // Рендер бейджика роли
+        const RoleBadge = ({ role }) => {
+            if (!role || role === "Пользователь") return null;
+            if (role === "Всемогущий") return <span style={{ background: "linear-gradient(45deg, #dc2626, #7f1d1d)", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", boxShadow: "0 0 8px rgba(220,38,38,0.8)", marginLeft: "8px" }}>ВСЕМОГУЩИЙ</span>;
+            if (role === "АДМИН") return <span style={{ background: "#ea580c", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", marginLeft: "8px" }}>АДМИН</span>;
+            return null;
+        };
+
         function App() {
+            // --- БАЗЫ ДАННЫХ ---
             const [usersDatabase, setUsersDatabase] = React.useState(() => {
                 const saved = localStorage.getItem("hellshop_users");
                 return saved ? JSON.parse(saved) : initialUsers;
@@ -59,6 +68,18 @@
                 ];
             });
 
+            // Новая база для личных сообщений
+            const [privateMessages, setPrivateMessages] = React.useState(() => {
+                const saved = localStorage.getItem("hellshop_pms");
+                return saved ? JSON.parse(saved) : [];
+            });
+
+            // Список открытых диалогов
+            const [openedChats, setOpenedChats] = React.useState(() => {
+                const saved = localStorage.getItem("hellshop_openedChats");
+                return saved ? JSON.parse(saved) : [];
+            });
+
             const [supportMenu, setSupportMenu] = React.useState(() => localStorage.getItem("hellshop_supportMenu") || "main");
 
             React.useEffect(() => { localStorage.setItem("hellshop_users", JSON.stringify(usersDatabase)); }, [usersDatabase]);
@@ -67,10 +88,13 @@
                 else localStorage.removeItem("hellshop_currentUser");
             }, [currentUser]);
             React.useEffect(() => { localStorage.setItem("hellshop_chats", JSON.stringify(chatMessages)); }, [chatMessages]);
+            React.useEffect(() => { localStorage.setItem("hellshop_pms", JSON.stringify(privateMessages)); }, [privateMessages]);
+            React.useEffect(() => { localStorage.setItem("hellshop_openedChats", JSON.stringify(openedChats)); }, [openedChats]);
             React.useEffect(() => { localStorage.setItem("hellshop_supportMenu", supportMenu); }, [supportMenu]);
 
+            // --- UI СОСТОЯНИЯ ---
             const [activePage, setActivePage] = React.useState("main"); 
-            const [activeChat, setActiveChat] = React.useState("support"); 
+            const [activeChat, setActiveChat] = React.useState("support"); // "support", "notifications", или ID юзера
             
             const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
@@ -85,6 +109,14 @@
             const [inputPhone, setInputPhone] = React.useState("");
             const [inputAvatar, setInputAvatar] = React.useState("");
 
+            // ПОИСК
+            const [searchQuery, setSearchQuery] = React.useState("");
+
+            // Результаты поиска
+            const searchResults = searchQuery.trim() ? usersDatabase.filter(u => 
+                (u.id.toString().includes(searchQuery) || u.username.toLowerCase().includes(searchQuery.toLowerCase())) && (!currentUser || u.id !== currentUser.id)
+            ) : [];
+
             React.useEffect(() => {
                 if (currentUser && isSettingsModalOpen) {
                     setInputEmail(currentUser.email || "");
@@ -93,14 +125,11 @@
                 }
             }, [isSettingsModalOpen, currentUser]);
 
-            // --- ФУНКЦИЯ ДЛЯ ЗАГРУЗКИ КАРТИНКИ ИЗ ФАЙЛОВ ---
             const handleImageUpload = (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onloadend = () => {
-                        setInputAvatar(reader.result);
-                    };
+                    reader.onloadend = () => { setInputAvatar(reader.result); };
                     reader.readAsDataURL(file);
                 }
             };
@@ -115,78 +144,15 @@
                 };
                 setCurrentUser(updatedUser);
                 setUsersDatabase(usersDatabase.map(u => u.id === currentUser.id ? updatedUser : u));
-                
-                const updatedChats = chatMessages.map(msg => 
-                    msg.sender === currentUser.username ? { ...msg, avatar: updatedUser.avatar } : msg
-                );
-                setChatMessages(updatedChats);
-
-                alert("🩸 Данные и аватарка успешно сохранены!");
+                alert("🩸 Данные успешно сохранены!");
                 setIsSettingsModalOpen(false);
-            };
-
-            const handleSendMessage = (text = typedMessage) => {
-                if (!text.trim()) return;
-
-                if (text === "🔙 Назад") {
-                    setSupportMenu("main");
-                    return;
-                }
-
-                const newMsg = {
-                    sender: currentUser ? currentUser.username : "Вы",
-                    avatar: currentUser ? currentUser.avatar : DEFAULT_AVATAR,
-                    text: text,
-                    time: "Только что"
-                };
-                let updatedMessages = [...chatMessages, newMsg];
-                setTypedMessage("");
-
-                let botReplyText = "";
-                let newMenu = supportMenu;
-
-                if (text === "🛒 Для покупателей") {
-                    botReplyText = "HellShop — это маркетплейс, где продавцы предлагают товары, а покупатели совершают покупки.\n\nКак купить товар?\n1️⃣ Нажмите «Купить» на странице объявления;\n2️⃣ Выберите способ оплаты;\n3️⃣ Следуйте инструкции на странице сделки.\n\nВоспользуйтесь кнопками ниже!";
-                    newMenu = "buyers";
-                } else if (text === "🤑 Для продавцов") {
-                    botReplyText = "Хотите начать продавать на HellShop?\n1. Зарегистрируйтесь на сайте.\n2. Создайте объявление.\n3. Ожидайте покупателей!";
-                } else if (text === "💰 Баланс и выплаты") {
-                    botReplyText = "Выплаты производятся на банковские карты, кошельки и криптовалюту в срок от 5 минут до 24 часов.";
-                } else if (text === "🔒 Безопасность") {
-                    botReplyText = "НИКОГДА не переходите в Telegram или Discord для проведения сделки. Общайтесь только в чате HellShop.";
-                } else if (text === "📜 Правила сайта") {
-                    botReplyText = "Общайтесь вежливо и проводите сделки строго внутри платформы. Нарушение = вечная блокировка.";
-                } else if (text === "🐛 Нашел баг") {
-                    botReplyText = "Опишите найденную ошибку в этом чате, и мы постараемся исправить её.";
-                } else if (text === "❓ Как проходит сделка?") {
-                    botReplyText = "Сделка проходит просто:\n1️⃣ Оплата (деньги в резерве).\n2️⃣ Продавец выдаёт товар.\n3️⃣ Вы подтверждаете заказ.";
-                } else if (text === "📦 Способы получения") {
-                    botReplyText = "Получение может быть:\n• Автоматическим\n• Через трейд\n• Лично в чате с продавцом.";
-                } else if (text === "💬 Чат с продавцом") {
-                    botReplyText = "После оплаты у вас автоматически откроется чат с продавцом.";
-                } else if (text === "💡 Советы") {
-                    botReplyText = "Совет: снимайте процесс покупки на видео. Это поможет вернуть деньги при споре.";
-                } else if (text === "💳 Оплата товаров") {
-                    botReplyText = "Мы принимаем карты РФ и мира, СБП и крипту.";
-                } else if (text === "✅ Гарантии и возврат") {
-                    botReplyText = "Если продавец не выдал товар — откройте спор, мы вернем деньги.";
-                } else if (text === "⭐ Отзывы") {
-                    botReplyText = "Не забывайте оставлять отзывы после сделки!";
-                }
-
-                if (botReplyText) {
-                    updatedMessages.push({ sender: "Бот", avatar: SUPPORT_AVATAR, text: botReplyText, time: "Только что" });
-                }
-
-                setChatMessages(updatedMessages);
-                if (newMenu !== supportMenu) setSupportMenu(newMenu);
             };
 
             const handleAuth = () => {
                 if (!inputUsername.trim() || !inputPassword.trim()) return alert("⚠️ Заполните все поля!");
                 if (authMode === "register") {
                     if (usersDatabase.find(u => u.username === inputUsername)) return alert("❌ Ник занят!");
-                    const newUser = { id: 100000 + usersDatabase.length + 1, username: inputUsername, password: inputPassword, avatar: DEFAULT_AVATAR, email: "", phone: "" };
+                    const newUser = { id: 100000 + usersDatabase.length + 1, username: inputUsername, password: inputPassword, avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Пользователь" };
                     setUsersDatabase([...usersDatabase, newUser]); 
                     setCurrentUser(newUser); 
                     setIsAuthModalOpen(false);
@@ -200,6 +166,82 @@
                 setInputUsername(""); setInputPassword("");
             };
 
+            // Открыть чат с пользователем из поиска
+            const openUserChat = (userId) => {
+                if (!openedChats.includes(userId)) {
+                    setOpenedChats([userId, ...openedChats]);
+                }
+                setActiveChat(userId);
+                setActivePage("messages");
+                setSearchQuery("");
+            };
+
+            // Выдача админки
+            const handleGrantAdmin = (userId) => {
+                if (window.confirm("Точно выдать АДМИНА этому пользователю?")) {
+                    setUsersDatabase(usersDatabase.map(u => u.id === userId ? { ...u, role: "АДМИН" } : u));
+                    alert("Роль АДМИН успешно выдана!");
+                }
+            };
+
+            // Отправка сообщений (Поддержка или ЛС)
+            const handleSendMessage = (text = typedMessage) => {
+                if (!text.trim()) return;
+
+                if (activeChat === "support") {
+                    if (text === "🔙 Назад") { setSupportMenu("main"); return; }
+                    const newMsg = { sender: currentUser ? currentUser.username : "Вы", avatar: currentUser ? currentUser.avatar : DEFAULT_AVATAR, text: text, time: "Только что" };
+                    let updatedMessages = [...chatMessages, newMsg];
+                    let botReplyText = "";
+                    let newMenu = supportMenu;
+
+                    if (text === "🛒 Для покупателей") {
+                        botReplyText = "HellShop — это маркетплейс.\nКак купить товар?\n1️⃣ Нажмите «Купить»;\n2️⃣ Выберите способ оплаты;\n3️⃣ Следуйте инструкции.";
+                        newMenu = "buyers";
+                    } else if (text === "🤑 Для продавцов") {
+                        botReplyText = "Хотите начать продавать?\n1. Регистрация.\n2. Создайте объявление.\n3. Ожидайте покупателей!";
+                    } else if (text === "💰 Баланс и выплаты") {
+                        botReplyText = "Выплаты производятся на карты и крипту.";
+                    } else if (text === "🔒 Безопасность") {
+                        botReplyText = "НИКОГДА не переходите в Telegram. Общайтесь только в чате HellShop.";
+                    } else if (text === "📜 Правила сайта") {
+                        botReplyText = "Нарушение = вечная блокировка.";
+                    } else if (text === "🐛 Нашел баг") {
+                        botReplyText = "Опишите ошибку, мы её исправим.";
+                    } else if (text === "❓ Как проходит сделка?") {
+                        botReplyText = "1️⃣ Оплата в резерв.\n2️⃣ Продавец выдаёт товар.\n3️⃣ Подтверждаете заказ.";
+                    } else if (text === "📦 Способы получения") {
+                        botReplyText = "Автоматически, через трейд или лично в чате.";
+                    } else if (text === "💬 Чат с продавцом") {
+                        botReplyText = "После оплаты откроется чат с продавцом.";
+                    } else if (text === "💡 Советы") {
+                        botReplyText = "Снимайте процесс покупки на видео!";
+                    } else if (text === "💳 Оплата товаров") {
+                        botReplyText = "Принимаем карты РФ, мира, СБП и крипту.";
+                    } else if (text === "✅ Гарантии и возврат") {
+                        botReplyText = "Спор = возврат денег при обмане.";
+                    } else if (text === "⭐ Отзывы") {
+                        botReplyText = "Оставляйте отзывы после сделки!";
+                    }
+
+                    if (botReplyText) { updatedMessages.push({ sender: "Бот", avatar: SUPPORT_AVATAR, text: botReplyText, time: "Только что" }); }
+                    setChatMessages(updatedMessages);
+                    if (newMenu !== supportMenu) setSupportMenu(newMenu);
+                } 
+                else if (typeof activeChat === "number") {
+                    // Отправка личного сообщения
+                    const newPm = {
+                        id: Date.now(),
+                        fromId: currentUser.id,
+                        toId: activeChat,
+                        text: text,
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    };
+                    setPrivateMessages([...privateMessages, newPm]);
+                }
+                setTypedMessage("");
+            };
+
             const renderTable = (headers, data, type) => (
                 <div style={{ backgroundColor: "rgba(20, 20, 20, 0.8)", borderRadius: "8px", overflow: "hidden", border: "1px solid #dc2626", marginTop: "20px" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
@@ -207,15 +249,19 @@
                             <tr>{headers.map((h, i) => <th key={i} style={{ padding: "15px", color: "#fca5a5" }}>{h}</th>)}</tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td colSpan={headers.length} style={{ padding: "30px", textAlign: "center", color: "#888", fontSize: "15px" }}>
-                                    {type === 'purchases' ? "Вы еще не совершали покупок." : type === 'sales' ? "У вас еще нет продаж." : "История операций пуста."}
-                                </td>
-                            </tr>
+                            <tr><td colSpan={headers.length} style={{ padding: "30px", textAlign: "center", color: "#888", fontSize: "15px" }}>История пуста.</td></tr>
                         </tbody>
                     </table>
                 </div>
             );
+
+            // Получаем инфу о собеседнике, если открыт ЛС
+            const activeUserObj = typeof activeChat === "number" ? usersDatabase.find(u => u.id === activeChat) : null;
+            // Фильтруем сообщения для открытого ЛС
+            const activePrivateMessages = activeUserObj ? privateMessages.filter(m => 
+                (m.fromId === currentUser?.id && m.toId === activeUserObj.id) || 
+                (m.fromId === activeUserObj.id && m.toId === currentUser?.id)
+            ) : [];
 
             const activeButtons = supportMenu === "main" ? mainCategories : buyerCategories;
 
@@ -223,20 +269,48 @@
                 <div className="bloody-bg">
                     {/* ШАПКА */}
                     <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 30px", height: "70px", backgroundColor: "rgba(10, 0, 0, 0.9)", borderBottom: "2px solid #dc2626", boxShadow: "0 4px 15px rgba(220, 38, 38, 0.2)" }}>
-                        <div onClick={() => setActivePage("main")} className="neon-text" style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626", cursor: "pointer", letterSpacing: "1px" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "30px" }}>
+                            <div onClick={() => setActivePage("main")} className="neon-text" style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626", cursor: "pointer", letterSpacing: "1px" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
+                            
+                            {/* СТРОКА ПОИСКА */}
+                            <div style={{ position: "relative" }}>
+                                <div style={{ display: "flex", alignItems: "center", backgroundColor: "#0a0a0a", border: "1px solid #dc2626", borderRadius: "20px", padding: "5px 15px", width: "250px" }}>
+                                    <span style={{ color: "#888", marginRight: "10px" }}>🔍</span>
+                                    <input 
+                                        type="text" 
+                                        className="search-input"
+                                        placeholder="Поиск по ID или Нику..." 
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        style={{ background: "transparent", border: "none", color: "#fff", outline: "none", width: "100%", fontSize: "13px" }}
+                                    />
+                                </div>
+                                {/* Выпадающий список поиска */}
+                                {searchQuery && (
+                                    <div style={{ position: "absolute", top: "45px", left: 0, width: "100%", backgroundColor: "rgba(15,0,0,0.95)", border: "1px solid #dc2626", borderRadius: "8px", zIndex: 50, overflow: "hidden", boxShadow: "0 10px 20px rgba(0,0,0,0.8)" }}>
+                                        {searchResults.length > 0 ? searchResults.map(u => (
+                                            <div key={u.id} onClick={() => {if(currentUser) openUserChat(u.id); else alert("Сначала войдите в аккаунт!");}} style={{ padding: "10px 15px", display: "flex", alignItems: "center", gap: "12px", borderBottom: "1px solid #333", cursor: "pointer" }}>
+                                                <img src={u.avatar} style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1px solid #555", objectFit: "cover" }} />
+                                                <div style={{ display: "flex", flexDirection: "column" }}>
+                                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                                        <span style={{ color: "#fff", fontWeight: "bold", fontSize: "14px" }}>{u.username}</span>
+                                                        <RoleBadge role={u.role} />
+                                                    </div>
+                                                    <span style={{ color: "#888", fontSize: "11px" }}>ID: {u.id}</span>
+                                                </div>
+                                            </div>
+                                        )) : (
+                                            <div style={{ padding: "15px", color: "#888", fontSize: "13px", textAlign: "center" }}>Ничего не найдено</div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
                             <div style={{ display: "flex", gap: "20px", fontSize: "14px", fontWeight: "500" }}>
                                 {["purchases", "sales", "messages", "finances"].map(page => (
-                                    <span 
-                                        key={page} 
-                                        onClick={() => setActivePage(page)} 
-                                        style={{ 
-                                            cursor: "pointer", transition: "0.2s",
-                                            color: activePage === page ? "#dc2626" : "#a3a3a3",
-                                            borderBottom: activePage === page ? "2px solid #dc2626" : "none",
-                                            paddingBottom: "23px", paddingTop: "25px"
-                                        }}
-                                    >
+                                    <span key={page} onClick={() => setActivePage(page)} style={{ cursor: "pointer", transition: "0.2s", color: activePage === page ? "#dc2626" : "#a3a3a3", borderBottom: activePage === page ? "2px solid #dc2626" : "none", paddingBottom: "23px", paddingTop: "25px" }}>
                                         {page === "purchases" ? "Покупки" : page === "sales" ? "Продажи" : page === "messages" ? "Сообщения" : "Финансы"}
                                     </span>
                                 ))}
@@ -252,9 +326,12 @@
                                     <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Войти</button>
                                 )}
                                 {isDropdownOpen && currentUser && (
-                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "rgba(15, 0, 0, 0.95)", border: "1px solid #dc2626", borderRadius: "6px", width: "220px", zIndex: 10, padding: "10px 0", boxShadow: "0 10px 30px rgba(220,38,38,0.3)" }}>
-                                        <div style={{ padding: "5px 15px", fontWeight: "bold", color: "#fff" }}>{currentUser.username}</div>
-                                        <div style={{ padding: "5px 15px", color: "#dc2626", fontSize: "12px" }}>ID: {currentUser.id}</div>
+                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "rgba(15, 0, 0, 0.95)", border: "1px solid #dc2626", borderRadius: "6px", width: "230px", zIndex: 10, padding: "10px 0", boxShadow: "0 10px 30px rgba(220,38,38,0.3)" }}>
+                                        <div style={{ padding: "5px 15px", display: "flex", alignItems: "center", flexWrap: "wrap" }}>
+                                            <span style={{ fontWeight: "bold", color: "#fff" }}>{currentUser.username}</span>
+                                            <RoleBadge role={currentUser.role} />
+                                        </div>
+                                        <div style={{ padding: "0 15px 5px 15px", color: "#dc2626", fontSize: "12px" }}>ID: {currentUser.id}</div>
                                         <hr style={{ border: "0", borderTop: "1px solid #dc2626", margin: "10px 0", opacity: "0.5" }} />
                                         <div onClick={() => { setIsSettingsModalOpen(true); setIsDropdownOpen(false); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#e5e5e5" }}>Настройки</div>
                                         <div onClick={() => { setCurrentUser(null); setIsDropdownOpen(false); setActivePage("main"); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#ef4444" }}>Выйти</div>
@@ -266,7 +343,6 @@
 
                     {/* ОСНОВНОЙ КОНТЕНТ */}
                     <main style={{ padding: "40px 50px", maxWidth: "1200px", margin: "0 auto" }}>
-                        
                         {!currentUser && activePage !== "main" ? (
                             <div style={{ textAlign: "center", padding: "100px 0" }}>
                                 <h2 style={{ color: "#dc2626" }} className="neon-text">ДОСТУП ЗАКРЫТ 🔒</h2>
@@ -279,86 +355,92 @@
                                     <div style={{ textAlign: "center" }}>
                                         <h1 className="neon-text" style={{ color: "#dc2626", textTransform: "uppercase", letterSpacing: "2px", margin: 0, fontSize: "36px" }}>Добро пожаловать в ад</h1>
                                         <p style={{ color: "#fca5a5", marginTop: "15px", fontSize: "18px" }}>Лучшие скрипты, софты и аккаунты только в HellShop.</p>
-                                    </div>
-                                )}
-
-                                {activePage === "purchases" && (
-                                    <div>
-                                        <h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои покупки</h1>
-                                        {renderTable(["Дата", "Заказ", "Описание", "Продавец", "Статус", "Сумма"], mockPurchases, "purchases")}
-                                    </div>
-                                )}
-
-                                {activePage === "sales" && (
-                                    <div>
-                                        <h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои продажи</h1>
-                                        {renderTable(["Дата", "Заказ", "Описание", "Покупатель", "Статус", "Сумма"], mockSales, "sales")}
-                                    </div>
-                                )}
-
-                                {activePage === "finances" && (
-                                    <div>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                                            <h1 className="neon-text" style={{ margin: 0, color: "#dc2626" }}>Финансы <span style={{ color: "#888", fontSize: "20px" }}>· 0 ₽ · 0 $ · 0 €</span></h1>
+                                        <div style={{ marginTop: "40px" }}>
+                                            <img src="https://i.pinimg.com/736x/21/df/b8/21dfb8582ba97ab743a6a12b4ba79275.jpg" alt="Hell Waifu" style={{ maxWidth: "100%", maxHeight: "500px", borderRadius: "16px", border: "2px solid #dc2626", boxShadow: "0 0 40px rgba(220, 38, 38, 0.6)", objectFit: "cover", filter: "grayscale(100%) sepia(100%) hue-rotate(315deg) saturate(500%) contrast(1.2)" }} />
                                         </div>
-                                        {renderTable(["Дата", "Описание", "Статус", "Сумма"], mockFinances, "finances")}
                                     </div>
                                 )}
+
+                                {activePage === "purchases" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои покупки</h1>{renderTable(["Дата", "Заказ", "Описание", "Продавец", "Статус", "Сумма"], [], "purchases")}</div>)}
+                                {activePage === "sales" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои продажи</h1>{renderTable(["Дата", "Заказ", "Описание", "Покупатель", "Статус", "Сумма"], [], "sales")}</div>)}
+                                {activePage === "finances" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Финансы</h1>{renderTable(["Дата", "Описание", "Статус", "Сумма"], [], "finances")}</div>)}
 
                                 {activePage === "messages" && (
                                     <div style={{ display: "flex", border: "1px solid #dc2626", borderRadius: "8px", height: "700px", backgroundColor: "rgba(10, 0, 0, 0.8)", overflow: "hidden", boxShadow: "0 0 20px rgba(220,38,38,0.15)" }}>
+                                        {/* СПИСОК ЧАТОВ */}
                                         <div style={{ width: "320px", borderRight: "1px solid #dc2626", overflowY: "auto", backgroundColor: "rgba(0,0,0,0.5)" }}>
                                             <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #dc2626", color: "#dc2626" }}>Чаты</div>
                                             
                                             <div onClick={() => setActiveChat("notifications")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "notifications" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
-                                                <div style={{ position: "relative" }}>
-                                                    <img src={NOTIFY_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #facc15" }} />
-                                                </div>
-                                                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                                                        <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Уведомления ✔</span>
-                                                        <span style={{ fontSize: "11px", color: "#666" }}>Система</span>
-                                                    </div>
-                                                    <div style={{ fontSize: "13px", color: "#888" }}>Нет новых уведомлений</div>
+                                                <img src={NOTIFY_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #facc15" }} />
+                                                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                    <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Уведомления ✔</span>
+                                                    <span style={{ fontSize: "13px", color: "#888" }}>Система</span>
                                                 </div>
                                             </div>
 
                                             <div onClick={() => setActiveChat("support")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "support" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
-                                                <div style={{ position: "relative" }}>
-                                                    <img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} />
-                                                    <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#dc2626", borderRadius: "50%", border: "2px solid #141414" }}></div>
-                                                </div>
-                                                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                                                        <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Поддержка ✔</span>
-                                                        <span style={{ fontSize: "11px", color: "#666" }}>Сейчас</span>
-                                                    </div>
-                                                    <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Бот поддержки поможет...</div>
+                                                <img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} />
+                                                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                    <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Поддержка ✔</span>
+                                                    <span style={{ fontSize: "13px", color: "#888" }}>Бот поддержки...</span>
                                                 </div>
                                             </div>
+
+                                            {/* РЕНДЕР ЛИЧНЫХ ЧАТОВ */}
+                                            {openedChats.map(userId => {
+                                                const u = usersDatabase.find(x => x.id === userId);
+                                                if(!u) return null;
+                                                return (
+                                                    <div key={u.id} onClick={() => setActiveChat(u.id)} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === u.id ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
+                                                        <img src={u.avatar} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #555", objectFit: "cover" }} />
+                                                        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                            <div style={{ display: "flex", alignItems: "center" }}>
+                                                                <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{u.username}</span>
+                                                                <RoleBadge role={u.role} />
+                                                            </div>
+                                                            <span style={{ fontSize: "13px", color: "#888" }}>Личный чат</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                         
+                                        {/* ОКНО ДИАЛОГА */}
                                         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                                            {/* ШАПКА ЧАТА */}
                                             <div style={{ padding: "15px 20px", borderBottom: "1px solid #dc2626", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "rgba(20,0,0,0.5)" }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                                                    <img src={activeChat === "notifications" ? NOTIFY_AVATAR : SUPPORT_AVATAR} style={{ width: "40px", height: "40px", borderRadius: "50%", border: activeChat === "notifications" ? "1px solid #facc15" : "1px solid #dc2626" }} />
-                                                    <div>
-                                                        <div style={{ fontWeight: "bold", color: activeChat === "notifications" ? "#facc15" : "#dc2626" }}>{activeChat === "notifications" ? "Уведомления ✔" : "Поддержка ✔"}</div>
-                                                        <div style={{ fontSize: "12px", color: "#888" }}>{activeChat === "notifications" ? "Официальный чат" : "Работаем 24/7"}</div>
-                                                    </div>
+                                                    {activeChat === "notifications" && <><img src={NOTIFY_AVATAR} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #facc15" }}/><div><div style={{fontWeight:"bold", color:"#facc15"}}>Уведомления ✔</div><div style={{fontSize:"12px", color:"#888"}}>Официальный чат</div></div></>}
+                                                    {activeChat === "support" && <><img src={SUPPORT_AVATAR} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #dc2626" }}/><div><div style={{fontWeight:"bold", color:"#dc2626"}}>Поддержка ✔</div><div style={{fontSize:"12px", color:"#888"}}>Бот поддержки</div></div></>}
+                                                    {typeof activeChat === "number" && activeUserObj && (
+                                                        <>
+                                                            <img src={activeUserObj.avatar} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #555", objectFit:"cover" }}/>
+                                                            <div>
+                                                                <div style={{display: "flex", alignItems: "center"}}>
+                                                                    <span style={{fontWeight:"bold", color:"#fff"}}>{activeUserObj.username}</span>
+                                                                    <RoleBadge role={activeUserObj.role} />
+                                                                </div>
+                                                                <div style={{fontSize:"12px", color:"#888"}}>ID: {activeUserObj.id}</div>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
+                                                {/* КНОПКА ВЫДАЧИ АДМИНА ДЛЯ ВСЕМОГУЩЕГО */}
+                                                {typeof activeChat === "number" && activeUserObj && currentUser.role === "Всемогущий" && activeUserObj.role !== "Всемогущий" && (
+                                                    <button onClick={() => handleGrantAdmin(activeUserObj.id)} style={{ backgroundColor: "#ea580c", color: "#fff", border: "none", padding: "8px 15px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 0 10px rgba(234,88,12,0.5)" }}>Выдать АДМИНА</button>
+                                                )}
                                             </div>
                                             
+                                            {/* СООБЩЕНИЯ */}
                                             <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", fontSize: "14px" }}>
-                                                {activeChat === "notifications" ? (
-                                                    <div style={{ display: "flex", flexDirection: "column", gap: "25px", maxWidth: "500px", margin: "0 auto", width: "100%", textAlign: "center", color: "#666", paddingTop: "50px" }}>
-                                                        У вас пока нет системных уведомлений.
-                                                    </div>
-                                                ) : (
+                                                {activeChat === "notifications" && <div style={{ textAlign: "center", color: "#666", paddingTop: "50px" }}>Нет системных уведомлений.</div>}
+                                                
+                                                {activeChat === "support" && (
                                                     <>
                                                         {chatMessages.map((msg, i) => (
                                                             <div key={i} style={{ display: "flex", gap: "15px", alignItems: "flex-start", backgroundColor: msg.sender !== "Бот" ? "rgba(220,38,38,0.05)" : "transparent", padding: msg.sender !== "Бот" ? "12px" : "0", borderRadius: "6px" }}>
-                                                                <img src={msg.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #333", backgroundColor: "#141414" }} />
+                                                                <img src={msg.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #333" }} />
                                                                 <div>
                                                                     <span style={{ fontWeight: "bold", color: msg.sender === "Бот" ? "#dc2626" : "#fff" }}>{msg.sender}</span>
                                                                     <span style={{ color: "#666", fontSize: "12px", marginLeft: "10px" }}>{msg.time}</span>
@@ -366,34 +448,51 @@
                                                                 </div>
                                                             </div>
                                                         ))}
-                                                        
                                                         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
                                                             {activeButtons.map((cat, i) => (
-                                                                <button key={i} onClick={() => handleSendMessage(cat)} style={{ backgroundColor: "rgba(20,0,0,0.8)", border: "1px solid #dc2626", color: "#fca5a5", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "13px", transition: "0.2s" }}>
-                                                                    {cat}
-                                                                </button>
+                                                                <button key={i} onClick={() => handleSendMessage(cat)} style={{ backgroundColor: "rgba(20,0,0,0.8)", border: "1px solid #dc2626", color: "#fca5a5", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "13px" }}>{cat}</button>
                                                             ))}
                                                         </div>
                                                     </>
                                                 )}
+
+                                                {typeof activeChat === "number" && (
+                                                    <>
+                                                        {activePrivateMessages.length === 0 ? (
+                                                            <div style={{ textAlign: "center", color: "#666", paddingTop: "50px" }}>Начните переписку с {activeUserObj?.username}</div>
+                                                        ) : (
+                                                            activePrivateMessages.map((msg) => {
+                                                                const isMe = msg.fromId === currentUser.id;
+                                                                const senderInfo = isMe ? currentUser : activeUserObj;
+                                                                return (
+                                                                    <div key={msg.id} style={{ display: "flex", gap: "15px", alignItems: "flex-start", backgroundColor: isMe ? "rgba(220,38,38,0.1)" : "transparent", padding: isMe ? "12px" : "0", borderRadius: "6px", alignSelf: isMe ? "flex-end" : "flex-start", width: "fit-content", maxWidth: "80%" }}>
+                                                                        {!isMe && <img src={senderInfo.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #333" }} />}
+                                                                        <div>
+                                                                            <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
+                                                                                <span style={{ fontWeight: "bold", color: isMe ? "#dc2626" : "#fff" }}>{senderInfo.username}</span>
+                                                                                <span style={{ color: "#666", fontSize: "11px" }}>{msg.time}</span>
+                                                                            </div>
+                                                                            <p style={{ margin: "5px 0", color: "#e5e5e5", lineHeight: "1.5" }}>{msg.text}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            })
+                                                        )}
+                                                    </>
+                                                )}
                                             </div>
                                             
-                                            {activeChat === "support" ? (
+                                            {/* ВВОД */}
+                                            {activeChat !== "notifications" ? (
                                                 <div style={{ padding: "15px", borderTop: "1px solid #dc2626", display: "flex", gap: "10px", backgroundColor: "rgba(0,0,0,0.5)" }}>
                                                     <input 
-                                                        type="text" 
-                                                        placeholder="Введите сообщение..." 
-                                                        value={typedMessage}
-                                                        onChange={(e) => setTypedMessage(e.target.value)}
-                                                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                                        type="text" placeholder="Введите сообщение..." value={typedMessage} onChange={(e) => setTypedMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                                         style={{ flex: 1, padding: "12px", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff", borderRadius: "4px", outline: "none" }} 
                                                     />
                                                     <button onClick={() => handleSendMessage()} style={{ padding: "0 25px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Отправить</button>
                                                 </div>
                                             ) : (
-                                                <div style={{ padding: "15px", borderTop: "1px solid #dc2626", textAlign: "center", color: "#666", fontSize: "13px", backgroundColor: "rgba(0,0,0,0.5)" }}>
-                                                    Это автоматический чат уведомлений. Вы не можете отправлять сюда сообщения.
-                                                </div>
+                                                <div style={{ padding: "15px", borderTop: "1px solid #dc2626", textAlign: "center", color: "#666", fontSize: "13px" }}>Системный чат. Отправка сообщений запрещена.</div>
                                             )}
                                         </div>
                                     </div>
@@ -402,7 +501,7 @@
                         )}
                     </main>
 
-                    {/* МОДАЛКА НАСТРОЕК */}
+                    {/* НАСТРОЙКИ */}
                     {isSettingsModalOpen && currentUser && (
                         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                             <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "12px", width: "400px", border: "1px solid #dc2626", boxShadow: "0 0 30px rgba(220,38,38,0.3)" }}>
@@ -412,41 +511,33 @@
                                 </div>
                                 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                                    {/* НОВАЯ КНОПКА ЗАГРУЗКИ АВАТАРКИ ИЗ ФАЙЛОВ */}
                                     <div>
                                         <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "8px" }}>Аватарка профиля</label>
                                         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
                                             <img src={inputAvatar || DEFAULT_AVATAR} style={{ width: "50px", height: "50px", borderRadius: "50%", objectFit: "cover", border: "1px solid #dc2626", backgroundColor: "#141414" }} />
-                                            <label style={{ backgroundColor: "#f3f4f6", color: "#111827", padding: "8px 16px", borderRadius: "4px", fontWeight: "bold", fontSize: "13px", cursor: "pointer", border: "1px solid #d1d5db" }}>
+                                            <label style={{ backgroundColor: "#f3f4f6", color: "#111827", padding: "8px 16px", borderRadius: "4px", fontWeight: "bold", fontSize: "13px", cursor: "pointer" }}>
                                                 Изменить аватарку
                                                 <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
                                             </label>
                                         </div>
                                     </div>
-
-                                    <div>
-                                        <label style={{ fontSize: "12px", color: "#888" }}>Привязать Email</label>
-                                        <input type="email" value={inputEmail} onChange={(e) => setInputEmail(e.target.value)} placeholder="your@email.com" style={{ width: "100%", padding: "10px", marginTop: "5px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", borderRadius: "4px", boxSizing: "border-box" }} />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: "12px", color: "#888" }}>Привязать Телефон</label>
-                                        <input type="text" value={inputPhone} onChange={(e) => setInputPhone(e.target.value)} placeholder="+7 (999) 000-00-00" style={{ width: "100%", padding: "10px", marginTop: "5px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", borderRadius: "4px", boxSizing: "border-box" }} />
-                                    </div>
-                                    <button onClick={handleSaveSettings} style={{ padding: "12px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", marginTop: "10px" }}>Сохранить изменения</button>
+                                    <input type="email" value={inputEmail} onChange={(e) => setInputEmail(e.target.value)} placeholder="Email" style={{ width: "100%", padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", boxSizing: "border-box" }} />
+                                    <input type="text" value={inputPhone} onChange={(e) => setInputPhone(e.target.value)} placeholder="Телефон" style={{ width: "100%", padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", boxSizing: "border-box" }} />
+                                    <button onClick={handleSaveSettings} style={{ padding: "12px", backgroundColor: "#dc2626", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold" }}>Сохранить изменения</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* МОДАЛКА ВХОДА */}
+                    {/* АВТОРИЗАЦИЯ */}
                     {isAuthModalOpen && (
                         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
-                            <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "8px", width: "320px", border: "1px solid #dc2626", boxShadow: "0 0 30px rgba(220,38,38,0.3)" }}>
+                            <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "8px", width: "320px", border: "1px solid #dc2626" }}>
                                 <h3 style={{ textAlign: "center", color: "#dc2626" }}>{authMode === "login" ? "Авторизация" : "Регистрация"}</h3>
                                 <p style={{ textAlign: "center", fontSize: "12px", color: "#888", cursor: "pointer", textDecoration: "underline" }} onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? "Нет аккаунта? Создать" : "Есть аккаунт? Войти"}</p>
-                                <input type="text" placeholder="Логин" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", borderRadius: "4px", boxSizing: "border-box" }} />
-                                <input type="password" placeholder="Пароль" value={inputPassword} onChange={(e) => setInputPassword(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "20px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", borderRadius: "4px", boxSizing: "border-box" }} />
-                                <button onClick={handleAuth} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" }}>Продолжить</button>
+                                <input type="text" placeholder="Логин" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", boxSizing: "border-box" }} />
+                                <input type="password" placeholder="Пароль" value={inputPassword} onChange={(e) => setInputPassword(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "20px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", boxSizing: "border-box" }} />
+                                <button onClick={handleAuth} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", fontWeight: "bold" }}>Продолжить</button>
                             </div>
                         </div>
                     )}
