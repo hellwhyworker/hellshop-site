@@ -6,6 +6,11 @@
     <title>HELLSHOP</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23660000'/%3E%3Cpath d='M20 50 L20 30 C20 5, 80 5, 80 30 L80 50 L65 50 L65 70 L55 90 L45 90 L35 70 L35 50 Z' fill='%23141414'/%3E%3Cpath d='M30 45 L45 45 L45 65 L55 65 L55 45 L70 45 L70 55 L55 55 L55 75 L45 75 L45 55 L30 55 Z' fill='%23660000'/%3E%3C/svg%3E">
     
+    <!-- Подключаем Firebase V8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- Подключаем React -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -24,18 +29,25 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        // --- ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAkyn8tkiPyZOBaI0rCTIDAdNGOJjl_dgs",
+            authDomain: "hellshop-132fe.firebaseapp.com",
+            databaseURL: "https://hellshop-132fe-default-rtdb.firebaseio.com",
+            projectId: "hellshop-132fe",
+            storageBucket: "hellshop-132fe.appspot.com",
+            messagingSenderId: "863558594124",
+            appId: "1:863558594124:web:46998a47434e95e7b08ee9"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
         const DEFAULT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23660000"/><path d="M20 50 L20 30 C20 5, 80 5, 80 30 L80 50 L65 50 L65 70 L55 90 L45 90 L35 70 L35 50 Z" fill="%23141414"/><path d="M30 45 L45 45 L45 65 L55 65 L55 45 L70 45 L70 55 L55 55 L55 75 L45 75 L45 55 L30 55 Z" fill="%23660000"/></svg>`;
         const SUPPORT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 15 L25 35 L25 65 L50 85 L75 65 L75 35 Z" fill="%23dc2626"/><circle cx="50" cy="45" r="10" fill="%23141414"/><path d="M35 70 C 35 55, 65 55, 65 70 Z" fill="%23141414"/></svg>`;
         const NOTIFY_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 20 C35 20, 30 35, 30 50 L25 70 L75 70 L70 50 C70 35, 65 20, 50 20 Z" fill="%23facc15"/><circle cx="50" cy="80" r="7" fill="%23facc15"/></svg>`;
-
-        const initialUsers = [
-            { id: 100001, username: "hellwhyworker", password: "123", avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Всемогущий" } 
-        ];
-
-        const mockPurchases = [];
-        const mockSales = [];
-        const mockFinances = [];
-        const notifications = []; 
 
         const mainCategories = ["🛒 Для покупателей", "🤑 Для продавцов", "💰 Баланс и выплаты", "🔒 Безопасность", "📜 Правила сайта", "🐛 Нашел баг"];
         const buyerCategories = ["🔙 Назад", "❓ Как проходит сделка?", "📦 Способы получения", "💬 Чат с продавцом", "💡 Советы", "💳 Оплата товаров", "✅ Гарантии и возврат", "⭐ Отзывы"];
@@ -48,11 +60,9 @@
         };
 
         function App() {
-            const [usersDatabase, setUsersDatabase] = React.useState(() => {
-                const saved = localStorage.getItem("hellshop_users");
-                return saved ? JSON.parse(saved) : initialUsers;
-            });
-
+            const [usersDatabase, setUsersDatabase] = React.useState([]);
+            const [privateMessages, setPrivateMessages] = React.useState([]);
+            
             const [currentUser, setCurrentUser] = React.useState(() => {
                 const saved = localStorage.getItem("hellshop_currentUser");
                 return saved ? JSON.parse(saved) : null;
@@ -61,13 +71,8 @@
             const [chatMessages, setChatMessages] = React.useState(() => {
                 const saved = localStorage.getItem("hellshop_chats");
                 return saved ? JSON.parse(saved) : [
-                    { sender: "Бот", avatar: SUPPORT_AVATAR, text: "Бот поддержки HellShop поможет тебе найти ответ на важные вопросы!\n\nНажимай на кнопки ниже, чтобы выбрать тему своего обращения и получить помощь.", time: "Система" }
+                    { sender: "Бот", avatar: SUPPORT_AVATAR, text: "Бот поддержки HellShop поможет тебе найти ответ на важные вопросы!\n\nНажимай на кнопки ниже, чтобы выбрать тему своего обращения.", time: "Система" }
                 ];
-            });
-
-            const [privateMessages, setPrivateMessages] = React.useState(() => {
-                const saved = localStorage.getItem("hellshop_pms");
-                return saved ? JSON.parse(saved) : [];
             });
 
             const [openedChats, setOpenedChats] = React.useState(() => {
@@ -77,32 +82,62 @@
 
             const [supportMenu, setSupportMenu] = React.useState(() => localStorage.getItem("hellshop_supportMenu") || "main");
 
-            React.useEffect(() => { localStorage.setItem("hellshop_users", JSON.stringify(usersDatabase)); }, [usersDatabase]);
-            React.useEffect(() => { 
-                if (currentUser) localStorage.setItem("hellshop_currentUser", JSON.stringify(currentUser));
-                else localStorage.removeItem("hellshop_currentUser");
+            // ПОДКЛЮЧЕНИЕ К FIREBASE
+            React.useEffect(() => {
+                const usersRef = db.ref('users');
+                usersRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        setUsersDatabase(Object.values(data));
+                    } else {
+                        const creator = { id: 100001, username: "hellwhyworker", password: "123", avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Всемогущий", isOnline: false };
+                        db.ref('users/100001').set(creator);
+                    }
+                });
+
+                const pmsRef = db.ref('privateMessages');
+                pmsRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        setPrivateMessages(Object.values(data));
+                    }
+                });
+            }, []);
+
+            React.useEffect(() => {
+                if (currentUser && usersDatabase.length > 0) {
+                    const updatedMe = usersDatabase.find(u => u.id === currentUser.id);
+                    if (updatedMe && JSON.stringify(updatedMe) !== JSON.stringify(currentUser)) {
+                        setCurrentUser(updatedMe);
+                        localStorage.setItem("hellshop_currentUser", JSON.stringify(updatedMe));
+                    }
+                }
+            }, [usersDatabase, currentUser]);
+
+            React.useEffect(() => {
+                if (currentUser) {
+                    const userRef = db.ref('users/' + currentUser.id);
+                    userRef.update({ isOnline: true });
+                    userRef.onDisconnect().update({ isOnline: false });
+                }
             }, [currentUser]);
+
             React.useEffect(() => { localStorage.setItem("hellshop_chats", JSON.stringify(chatMessages)); }, [chatMessages]);
-            React.useEffect(() => { localStorage.setItem("hellshop_pms", JSON.stringify(privateMessages)); }, [privateMessages]);
             React.useEffect(() => { localStorage.setItem("hellshop_openedChats", JSON.stringify(openedChats)); }, [openedChats]);
             React.useEffect(() => { localStorage.setItem("hellshop_supportMenu", supportMenu); }, [supportMenu]);
 
             const [activePage, setActivePage] = React.useState("main"); 
             const [activeChat, setActiveChat] = React.useState("support"); 
-            
             const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
             const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
             const [authMode, setAuthMode] = React.useState("login");
-            
             const [inputUsername, setInputUsername] = React.useState("");
             const [inputPassword, setInputPassword] = React.useState("");
             const [typedMessage, setTypedMessage] = React.useState("");
-
             const [inputEmail, setInputEmail] = React.useState("");
             const [inputPhone, setInputPhone] = React.useState("");
             const [inputAvatar, setInputAvatar] = React.useState("");
-
             const [searchQuery, setSearchQuery] = React.useState("");
 
             const searchResults = searchQuery.trim() ? usersDatabase.filter(u => 
@@ -134,8 +169,7 @@
                     phone: inputPhone,
                     avatar: inputAvatar.trim() ? inputAvatar : DEFAULT_AVATAR 
                 };
-                setCurrentUser(updatedUser);
-                setUsersDatabase(usersDatabase.map(u => u.id === currentUser.id ? updatedUser : u));
+                db.ref('users/' + currentUser.id).update(updatedUser);
                 alert("🩸 Данные успешно сохранены!");
                 setIsSettingsModalOpen(false);
             };
@@ -144,18 +178,41 @@
                 if (!inputUsername.trim() || !inputPassword.trim()) return alert("⚠️ Заполните все поля!");
                 if (authMode === "register") {
                     if (usersDatabase.find(u => u.username === inputUsername)) return alert("❌ Ник занят!");
-                    const newUser = { id: 100000 + usersDatabase.length + 1, username: inputUsername, password: inputPassword, avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Пользователь" };
-                    setUsersDatabase([...usersDatabase, newUser]); 
+                    
+                    // --- ИСПРАВЛЕННАЯ ЛОГИКА ГЕНЕРАЦИИ ID ---
+                    // Находим максимальный ID в базе, если база пуста - начинаем с 100000
+                    const maxId = usersDatabase.length > 0 
+                        ? Math.max(...usersDatabase.map(u => u.id)) 
+                        : 100000;
+                    
+                    const newId = maxId + 1; // Увеличиваем ровно на 1 от самого большого
+                    
+                    const newUser = { id: newId, username: inputUsername, password: inputPassword, avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Пользователь", isOnline: true };
+                    
+                    db.ref('users/' + newId).set(newUser);
                     setCurrentUser(newUser); 
+                    localStorage.setItem("hellshop_currentUser", JSON.stringify(newUser));
                     setIsAuthModalOpen(false);
                 } else {
                     const user = usersDatabase.find(u => u.username === inputUsername && u.password === inputPassword);
                     if (user) { 
-                        setCurrentUser(user); 
+                        setCurrentUser(user);
+                        localStorage.setItem("hellshop_currentUser", JSON.stringify(user));
+                        db.ref('users/' + user.id).update({ isOnline: true });
                         setIsAuthModalOpen(false); 
                     } else { alert("❌ Неверный логин или пароль!"); }
                 }
                 setInputUsername(""); setInputPassword("");
+            };
+
+            const handleLogout = () => {
+                if (currentUser) {
+                    db.ref('users/' + currentUser.id).update({ isOnline: false });
+                }
+                setCurrentUser(null);
+                localStorage.removeItem("hellshop_currentUser");
+                setIsDropdownOpen(false); 
+                setActivePage("main");
             };
 
             const openUserChat = (userId) => {
@@ -169,7 +226,7 @@
 
             const handleGrantAdmin = (userId) => {
                 if (window.confirm("Точно выдать АДМИНА этому пользователю?")) {
-                    setUsersDatabase(usersDatabase.map(u => u.id === userId ? { ...u, role: "АДМИН" } : u));
+                    db.ref('users/' + userId).update({ role: "АДМИН" });
                     alert("Роль АДМИН успешно выдана!");
                 }
             };
@@ -219,13 +276,12 @@
                 } 
                 else if (typeof activeChat === "number") {
                     const newPm = {
-                        id: Date.now(),
                         fromId: currentUser.id,
                         toId: activeChat,
                         text: text,
                         time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
                     };
-                    setPrivateMessages([...privateMessages, newPm]);
+                    db.ref('privateMessages').push(newPm);
                 }
                 setTypedMessage("");
             };
@@ -258,7 +314,6 @@
                         <div style={{ display: "flex", alignItems: "center", gap: "30px" }}>
                             <div onClick={() => setActivePage("main")} className="neon-text" style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626", cursor: "pointer", letterSpacing: "1px" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
                             
-                            {/* СТРОКА ПОИСКА С КРЕСТИКОМ */}
                             <div style={{ position: "relative" }}>
                                 <div style={{ display: "flex", alignItems: "center", backgroundColor: "#0a0a0a", border: "1px solid #dc2626", borderRadius: "20px", padding: "5px 15px", width: "250px" }}>
                                     <span style={{ color: "#888", marginRight: "10px" }}>🔍</span>
@@ -286,7 +341,7 @@
                                                     </div>
                                                     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                                                         <span style={{ color: "#888", fontSize: "11px" }}>ID: {u.id}</span>
-                                                        <span style={{ color: "#4ade80", fontSize: "10px" }}>• В сети</span>
+                                                        {u.isOnline && <span style={{ color: "#4ade80", fontSize: "10px" }}>• В сети</span>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -300,9 +355,9 @@
 
                         <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
                             <div style={{ display: "flex", gap: "20px", fontSize: "14px", fontWeight: "500" }}>
-                                {["purchases", "sales", "messages", "finances"].map(page => (
+                                {["messages"].map(page => (
                                     <span key={page} onClick={() => setActivePage(page)} style={{ cursor: "pointer", transition: "0.2s", color: activePage === page ? "#dc2626" : "#a3a3a3", borderBottom: activePage === page ? "2px solid #dc2626" : "none", paddingBottom: "23px", paddingTop: "25px" }}>
-                                        {page === "purchases" ? "Покупки" : page === "sales" ? "Продажи" : page === "messages" ? "Сообщения" : "Финансы"}
+                                        Сообщения
                                     </span>
                                 ))}
                             </div>
@@ -331,7 +386,7 @@
                                         </div>
                                         <hr style={{ border: "0", borderTop: "1px solid #dc2626", margin: "10px 0", opacity: "0.5" }} />
                                         <div onClick={() => { setIsSettingsModalOpen(true); setIsDropdownOpen(false); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#e5e5e5" }}>Настройки</div>
-                                        <div onClick={() => { setCurrentUser(null); setIsDropdownOpen(false); setActivePage("main"); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#ef4444" }}>Выйти</div>
+                                        <div onClick={handleLogout} style={{ padding: "8px 15px", cursor: "pointer", color: "#ef4444" }}>Выйти</div>
                                     </div>
                                 )}
                             </div>
@@ -354,10 +409,6 @@
                                         <p style={{ color: "#fca5a5", marginTop: "15px", fontSize: "18px" }}>Лучшие скрипты, софты и аккаунты только в HellShop.</p>
                                     </div>
                                 )}
-
-                                {activePage === "purchases" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои покупки</h1>{renderTable(["Дата", "Заказ", "Описание", "Продавец", "Статус", "Сумма"], [], "purchases")}</div>)}
-                                {activePage === "sales" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои продажи</h1>{renderTable(["Дата", "Заказ", "Описание", "Покупатель", "Статус", "Сумма"], [], "sales")}</div>)}
-                                {activePage === "finances" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Финансы</h1>{renderTable(["Дата", "Описание", "Статус", "Сумма"], [], "finances")}</div>)}
 
                                 {activePage === "messages" && (
                                     <div style={{ display: "flex", border: "1px solid #dc2626", borderRadius: "8px", height: "700px", backgroundColor: "rgba(10, 0, 0, 0.8)", overflow: "hidden", boxShadow: "0 0 20px rgba(220,38,38,0.15)" }}>
@@ -395,7 +446,7 @@
                                                     <div key={u.id} onClick={() => setActiveChat(u.id)} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === u.id ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
                                                         <div style={{ position: "relative" }}>
                                                             <img src={u.avatar} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #555", objectFit: "cover" }} />
-                                                            <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>
+                                                            {u.isOnline && <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>}
                                                         </div>
                                                         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}>
@@ -403,7 +454,7 @@
                                                                     <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{u.username}</span>
                                                                     <RoleBadge role={u.role} />
                                                                 </div>
-                                                                <span style={{ fontSize: "11px", color: "#4ade80" }}>В сети</span>
+                                                                {u.isOnline && <span style={{ fontSize: "11px", color: "#4ade80" }}>В сети</span>}
                                                             </div>
                                                             <span style={{ fontSize: "13px", color: "#888" }}>Личный чат</span>
                                                         </div>
@@ -414,7 +465,6 @@
                                         
                                         {/* ОКНО ДИАЛОГА */}
                                         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                                            {/* ШАПКА ЧАТА */}
                                             <div style={{ padding: "15px 20px", borderBottom: "1px solid #dc2626", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "rgba(20,0,0,0.5)" }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
                                                     {activeChat === "notifications" && <><img src={NOTIFY_AVATAR} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #facc15" }}/><div><div style={{fontWeight:"bold", color:"#facc15"}}>Уведомления ✔</div><div style={{fontSize:"12px", color:"#888"}}>Официальный чат</div></div></>}
@@ -429,7 +479,7 @@
                                                                 </div>
                                                                 <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                                                                     <span style={{fontSize:"12px", color:"#888"}}>ID: {activeUserObj.id}</span>
-                                                                    <span style={{fontSize:"12px", color:"#4ade80"}}>• В сети</span>
+                                                                    {activeUserObj.isOnline && <span style={{fontSize:"12px", color:"#4ade80"}}>• В сети</span>}
                                                                 </div>
                                                             </div>
                                                         </>
@@ -440,7 +490,6 @@
                                                 )}
                                             </div>
                                             
-                                            {/* СООБЩЕНИЯ */}
                                             <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", fontSize: "14px" }}>
                                                 {activeChat === "notifications" && <div style={{ textAlign: "center", color: "#666", paddingTop: "50px" }}>Нет системных уведомлений.</div>}
                                                 
@@ -473,7 +522,7 @@
                                                                 const isMe = msg.fromId === currentUser.id;
                                                                 const senderInfo = isMe ? currentUser : activeUserObj;
                                                                 return (
-                                                                    <div key={msg.id} style={{ display: "flex", gap: "15px", alignItems: "flex-start", backgroundColor: isMe ? "rgba(220,38,38,0.1)" : "transparent", padding: isMe ? "12px" : "0", borderRadius: "6px", alignSelf: isMe ? "flex-end" : "flex-start", width: "fit-content", maxWidth: "80%" }}>
+                                                                    <div key={msg.id || Math.random()} style={{ display: "flex", gap: "15px", alignItems: "flex-start", backgroundColor: isMe ? "rgba(220,38,38,0.1)" : "transparent", padding: isMe ? "12px" : "0", borderRadius: "6px", alignSelf: isMe ? "flex-end" : "flex-start", width: "fit-content", maxWidth: "80%" }}>
                                                                         {!isMe && <img src={senderInfo.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #333" }} />}
                                                                         <div>
                                                                             <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
@@ -490,7 +539,6 @@
                                                 )}
                                             </div>
                                             
-                                            {/* ВВОД */}
                                             {activeChat !== "notifications" ? (
                                                 <div style={{ padding: "15px", borderTop: "1px solid #dc2626", display: "flex", gap: "10px", backgroundColor: "rgba(0,0,0,0.5)" }}>
                                                     <input 
