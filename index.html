@@ -28,7 +28,6 @@
         const SUPPORT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 15 L25 35 L25 65 L50 85 L75 65 L75 35 Z" fill="%23dc2626"/><circle cx="50" cy="45" r="10" fill="%23141414"/><path d="M35 70 C 35 55, 65 55, 65 70 Z" fill="%23141414"/></svg>`;
         const NOTIFY_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 20 C35 20, 30 35, 30 50 L25 70 L75 70 L70 50 C70 35, 65 20, 50 20 Z" fill="%23facc15"/><circle cx="50" cy="80" r="7" fill="%23facc15"/></svg>`;
 
-        // Добавлена роль Всемогущий для создателя
         const initialUsers = [
             { id: 100001, username: "hellwhyworker", password: "123", avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Всемогущий" } 
         ];
@@ -41,7 +40,6 @@
         const mainCategories = ["🛒 Для покупателей", "🤑 Для продавцов", "💰 Баланс и выплаты", "🔒 Безопасность", "📜 Правила сайта", "🐛 Нашел баг"];
         const buyerCategories = ["🔙 Назад", "❓ Как проходит сделка?", "📦 Способы получения", "💬 Чат с продавцом", "💡 Советы", "💳 Оплата товаров", "✅ Гарантии и возврат", "⭐ Отзывы"];
 
-        // Рендер бейджика роли
         const RoleBadge = ({ role }) => {
             if (!role || role === "Пользователь") return null;
             if (role === "Всемогущий") return <span style={{ background: "linear-gradient(45deg, #dc2626, #7f1d1d)", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", boxShadow: "0 0 8px rgba(220,38,38,0.8)", marginLeft: "8px" }}>ВСЕМОГУЩИЙ</span>;
@@ -50,7 +48,6 @@
         };
 
         function App() {
-            // --- БАЗЫ ДАННЫХ ---
             const [usersDatabase, setUsersDatabase] = React.useState(() => {
                 const saved = localStorage.getItem("hellshop_users");
                 return saved ? JSON.parse(saved) : initialUsers;
@@ -68,13 +65,11 @@
                 ];
             });
 
-            // Новая база для личных сообщений
             const [privateMessages, setPrivateMessages] = React.useState(() => {
                 const saved = localStorage.getItem("hellshop_pms");
                 return saved ? JSON.parse(saved) : [];
             });
 
-            // Список открытых диалогов
             const [openedChats, setOpenedChats] = React.useState(() => {
                 const saved = localStorage.getItem("hellshop_openedChats");
                 return saved ? JSON.parse(saved) : [];
@@ -92,9 +87,8 @@
             React.useEffect(() => { localStorage.setItem("hellshop_openedChats", JSON.stringify(openedChats)); }, [openedChats]);
             React.useEffect(() => { localStorage.setItem("hellshop_supportMenu", supportMenu); }, [supportMenu]);
 
-            // --- UI СОСТОЯНИЯ ---
             const [activePage, setActivePage] = React.useState("main"); 
-            const [activeChat, setActiveChat] = React.useState("support"); // "support", "notifications", или ID юзера
+            const [activeChat, setActiveChat] = React.useState("support"); 
             
             const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
@@ -109,10 +103,8 @@
             const [inputPhone, setInputPhone] = React.useState("");
             const [inputAvatar, setInputAvatar] = React.useState("");
 
-            // ПОИСК
             const [searchQuery, setSearchQuery] = React.useState("");
 
-            // Результаты поиска
             const searchResults = searchQuery.trim() ? usersDatabase.filter(u => 
                 (u.id.toString().includes(searchQuery) || u.username.toLowerCase().includes(searchQuery.toLowerCase())) && (!currentUser || u.id !== currentUser.id)
             ) : [];
@@ -166,7 +158,6 @@
                 setInputUsername(""); setInputPassword("");
             };
 
-            // Открыть чат с пользователем из поиска
             const openUserChat = (userId) => {
                 if (!openedChats.includes(userId)) {
                     setOpenedChats([userId, ...openedChats]);
@@ -176,7 +167,6 @@
                 setSearchQuery("");
             };
 
-            // Выдача админки
             const handleGrantAdmin = (userId) => {
                 if (window.confirm("Точно выдать АДМИНА этому пользователю?")) {
                     setUsersDatabase(usersDatabase.map(u => u.id === userId ? { ...u, role: "АДМИН" } : u));
@@ -184,7 +174,6 @@
                 }
             };
 
-            // Отправка сообщений (Поддержка или ЛС)
             const handleSendMessage = (text = typedMessage) => {
                 if (!text.trim()) return;
 
@@ -229,7 +218,6 @@
                     if (newMenu !== supportMenu) setSupportMenu(newMenu);
                 } 
                 else if (typeof activeChat === "number") {
-                    // Отправка личного сообщения
                     const newPm = {
                         id: Date.now(),
                         fromId: currentUser.id,
@@ -255,9 +243,7 @@
                 </div>
             );
 
-            // Получаем инфу о собеседнике, если открыт ЛС
             const activeUserObj = typeof activeChat === "number" ? usersDatabase.find(u => u.id === activeChat) : null;
-            // Фильтруем сообщения для открытого ЛС
             const activePrivateMessages = activeUserObj ? privateMessages.filter(m => 
                 (m.fromId === currentUser?.id && m.toId === activeUserObj.id) || 
                 (m.fromId === activeUserObj.id && m.toId === currentUser?.id)
@@ -272,7 +258,7 @@
                         <div style={{ display: "flex", alignItems: "center", gap: "30px" }}>
                             <div onClick={() => setActivePage("main")} className="neon-text" style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626", cursor: "pointer", letterSpacing: "1px" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
                             
-                            {/* СТРОКА ПОИСКА */}
+                            {/* СТРОКА ПОИСКА С КРЕСТИКОМ */}
                             <div style={{ position: "relative" }}>
                                 <div style={{ display: "flex", alignItems: "center", backgroundColor: "#0a0a0a", border: "1px solid #dc2626", borderRadius: "20px", padding: "5px 15px", width: "250px" }}>
                                     <span style={{ color: "#888", marginRight: "10px" }}>🔍</span>
@@ -284,8 +270,10 @@
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         style={{ background: "transparent", border: "none", color: "#fff", outline: "none", width: "100%", fontSize: "13px" }}
                                     />
+                                    {searchQuery && (
+                                        <span onClick={() => setSearchQuery("")} style={{ color: "#dc2626", cursor: "pointer", fontWeight: "bold", marginLeft: "5px", padding: "0 5px" }}>×</span>
+                                    )}
                                 </div>
-                                {/* Выпадающий список поиска */}
                                 {searchQuery && (
                                     <div style={{ position: "absolute", top: "45px", left: 0, width: "100%", backgroundColor: "rgba(15,0,0,0.95)", border: "1px solid #dc2626", borderRadius: "8px", zIndex: 50, overflow: "hidden", boxShadow: "0 10px 20px rgba(0,0,0,0.8)" }}>
                                         {searchResults.length > 0 ? searchResults.map(u => (
@@ -296,7 +284,10 @@
                                                         <span style={{ color: "#fff", fontWeight: "bold", fontSize: "14px" }}>{u.username}</span>
                                                         <RoleBadge role={u.role} />
                                                     </div>
-                                                    <span style={{ color: "#888", fontSize: "11px" }}>ID: {u.id}</span>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                                        <span style={{ color: "#888", fontSize: "11px" }}>ID: {u.id}</span>
+                                                        <span style={{ color: "#4ade80", fontSize: "10px" }}>• В сети</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         )) : (
@@ -319,7 +310,10 @@
                             <div style={{ position: "relative" }}>
                                 {currentUser ? (
                                     <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-                                        <img src={currentUser.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #dc2626", backgroundColor: "#141414" }} />
+                                        <div style={{ position: "relative" }}>
+                                            <img src={currentUser.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #dc2626", backgroundColor: "#141414" }} />
+                                            <div style={{ position: "absolute", bottom: "0", right: "0", width: "8px", height: "8px", backgroundColor: "#4ade80", borderRadius: "50%", border: "1px solid #141414" }}></div>
+                                        </div>
                                         <span style={{ fontSize: "10px", color: "#dc2626" }}>▼</span>
                                     </div>
                                 ) : (
@@ -331,7 +325,10 @@
                                             <span style={{ fontWeight: "bold", color: "#fff" }}>{currentUser.username}</span>
                                             <RoleBadge role={currentUser.role} />
                                         </div>
-                                        <div style={{ padding: "0 15px 5px 15px", color: "#dc2626", fontSize: "12px" }}>ID: {currentUser.id}</div>
+                                        <div style={{ padding: "0 15px 5px 15px", color: "#dc2626", fontSize: "12px", display: "flex", justifyContent: "space-between" }}>
+                                            <span>ID: {currentUser.id}</span>
+                                            <span style={{ color: "#4ade80" }}>В сети</span>
+                                        </div>
                                         <hr style={{ border: "0", borderTop: "1px solid #dc2626", margin: "10px 0", opacity: "0.5" }} />
                                         <div onClick={() => { setIsSettingsModalOpen(true); setIsDropdownOpen(false); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#e5e5e5" }}>Настройки</div>
                                         <div onClick={() => { setCurrentUser(null); setIsDropdownOpen(false); setActivePage("main"); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#ef4444" }}>Выйти</div>
@@ -352,12 +349,9 @@
                         ) : (
                             <>
                                 {activePage === "main" && (
-                                    <div style={{ textAlign: "center" }}>
+                                    <div style={{ textAlign: "center", paddingTop: "50px" }}>
                                         <h1 className="neon-text" style={{ color: "#dc2626", textTransform: "uppercase", letterSpacing: "2px", margin: 0, fontSize: "36px" }}>Добро пожаловать в ад</h1>
                                         <p style={{ color: "#fca5a5", marginTop: "15px", fontSize: "18px" }}>Лучшие скрипты, софты и аккаунты только в HellShop.</p>
-                                        <div style={{ marginTop: "40px" }}>
-                                            <img src="https://i.pinimg.com/736x/21/df/b8/21dfb8582ba97ab743a6a12b4ba79275.jpg" alt="Hell Waifu" style={{ maxWidth: "100%", maxHeight: "500px", borderRadius: "16px", border: "2px solid #dc2626", boxShadow: "0 0 40px rgba(220, 38, 38, 0.6)", objectFit: "cover", filter: "grayscale(100%) sepia(100%) hue-rotate(315deg) saturate(500%) contrast(1.2)" }} />
-                                        </div>
                                     </div>
                                 )}
 
@@ -380,10 +374,16 @@
                                             </div>
 
                                             <div onClick={() => setActiveChat("support")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "support" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
-                                                <img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} />
-                                                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                                    <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Поддержка ✔</span>
-                                                    <span style={{ fontSize: "13px", color: "#888" }}>Бот поддержки...</span>
+                                                <div style={{ position: "relative" }}>
+                                                    <img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} />
+                                                    <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>
+                                                </div>
+                                                <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}>
+                                                        <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Поддержка ✔</span>
+                                                        <span style={{ fontSize: "11px", color: "#4ade80" }}>В сети 24/7</span>
+                                                    </div>
+                                                    <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Бот поддержки поможет...</div>
                                                 </div>
                                             </div>
 
@@ -393,11 +393,17 @@
                                                 if(!u) return null;
                                                 return (
                                                     <div key={u.id} onClick={() => setActiveChat(u.id)} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === u.id ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
-                                                        <img src={u.avatar} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #555", objectFit: "cover" }} />
+                                                        <div style={{ position: "relative" }}>
+                                                            <img src={u.avatar} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #555", objectFit: "cover" }} />
+                                                            <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>
+                                                        </div>
                                                         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                                            <div style={{ display: "flex", alignItems: "center" }}>
-                                                                <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{u.username}</span>
-                                                                <RoleBadge role={u.role} />
+                                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}>
+                                                                <div style={{ display: "flex", alignItems: "center" }}>
+                                                                    <span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{u.username}</span>
+                                                                    <RoleBadge role={u.role} />
+                                                                </div>
+                                                                <span style={{ fontSize: "11px", color: "#4ade80" }}>В сети</span>
                                                             </div>
                                                             <span style={{ fontSize: "13px", color: "#888" }}>Личный чат</span>
                                                         </div>
@@ -412,7 +418,7 @@
                                             <div style={{ padding: "15px 20px", borderBottom: "1px solid #dc2626", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "rgba(20,0,0,0.5)" }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
                                                     {activeChat === "notifications" && <><img src={NOTIFY_AVATAR} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #facc15" }}/><div><div style={{fontWeight:"bold", color:"#facc15"}}>Уведомления ✔</div><div style={{fontSize:"12px", color:"#888"}}>Официальный чат</div></div></>}
-                                                    {activeChat === "support" && <><img src={SUPPORT_AVATAR} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #dc2626" }}/><div><div style={{fontWeight:"bold", color:"#dc2626"}}>Поддержка ✔</div><div style={{fontSize:"12px", color:"#888"}}>Бот поддержки</div></div></>}
+                                                    {activeChat === "support" && <><img src={SUPPORT_AVATAR} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #dc2626" }}/><div><div style={{fontWeight:"bold", color:"#dc2626"}}>Поддержка ✔</div><div style={{fontSize:"12px", color:"#4ade80"}}>В сети 24/7</div></div></>}
                                                     {typeof activeChat === "number" && activeUserObj && (
                                                         <>
                                                             <img src={activeUserObj.avatar} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #555", objectFit:"cover" }}/>
@@ -421,12 +427,14 @@
                                                                     <span style={{fontWeight:"bold", color:"#fff"}}>{activeUserObj.username}</span>
                                                                     <RoleBadge role={activeUserObj.role} />
                                                                 </div>
-                                                                <div style={{fontSize:"12px", color:"#888"}}>ID: {activeUserObj.id}</div>
+                                                                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                                                    <span style={{fontSize:"12px", color:"#888"}}>ID: {activeUserObj.id}</span>
+                                                                    <span style={{fontSize:"12px", color:"#4ade80"}}>• В сети</span>
+                                                                </div>
                                                             </div>
                                                         </>
                                                     )}
                                                 </div>
-                                                {/* КНОПКА ВЫДАЧИ АДМИНА ДЛЯ ВСЕМОГУЩЕГО */}
                                                 {typeof activeChat === "number" && activeUserObj && currentUser.role === "Всемогущий" && activeUserObj.role !== "Всемогущий" && (
                                                     <button onClick={() => handleGrantAdmin(activeUserObj.id)} style={{ backgroundColor: "#ea580c", color: "#fff", border: "none", padding: "8px 15px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 0 10px rgba(234,88,12,0.5)" }}>Выдать АДМИНА</button>
                                                 )}
