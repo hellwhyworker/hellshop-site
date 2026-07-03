@@ -22,6 +22,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #dc2626; }
         .bloody-bg { background: linear-gradient(180deg, #1a0000 0%, #050000 100%); min-height: 100vh; }
         .neon-text { text-shadow: 0 0 10px rgba(220, 38, 38, 0.7); }
+        .search-input::placeholder { color: #888; }
     </style>
 </head>
 <body>
@@ -103,6 +104,31 @@
                 });
             }, []);
 
+            // АВТО-ОБНОВЛЕНИЕ СПИСКА ЧАТОВ ПРИ НОВОМ СООБЩЕНИИ
+            React.useEffect(() => {
+                if (!currentUser) return;
+                
+                setOpenedChats(prevChats => {
+                    let updatedChats = [...prevChats];
+                    let changed = false;
+
+                    privateMessages.forEach(msg => {
+                        // Если написали НАМ, и этого человека еще нет в списке слева
+                        if (msg.toId === currentUser.id && !updatedChats.includes(msg.fromId)) {
+                            updatedChats.unshift(msg.fromId); // Добавляем его на самый верх
+                            changed = true;
+                        }
+                        // Если МЫ написали кому-то, и его нет в списке (на всякий случай)
+                        if (msg.fromId === currentUser.id && !updatedChats.includes(msg.toId)) {
+                            updatedChats.unshift(msg.toId);
+                            changed = true;
+                        }
+                    });
+
+                    return changed ? updatedChats : prevChats;
+                });
+            }, [privateMessages, currentUser]);
+
             React.useEffect(() => {
                 if (currentUser && usersDatabase.length > 0) {
                     const updatedMe = usersDatabase.find(u => u.id === currentUser.id);
@@ -137,8 +163,6 @@
             const [inputEmail, setInputEmail] = React.useState("");
             const [inputPhone, setInputPhone] = React.useState("");
             const [inputAvatar, setInputAvatar] = React.useState("");
-            
-            // Состояние для поиска ВНУТРИ сообщений
             const [searchQuery, setSearchQuery] = React.useState("");
 
             const searchResults = searchQuery.trim() ? usersDatabase.filter(u => {
@@ -185,7 +209,9 @@
                     const maxId = usersDatabase.length > 0 
                         ? Math.max(...usersDatabase.map(u => u.id || 100000)) 
                         : 100000;
+                    
                     const newId = maxId + 1; 
+                    
                     const newUser = { id: newId, username: inputUsername, password: inputPassword, avatar: DEFAULT_AVATAR, email: "", phone: "", role: "Пользователь", isOnline: true };
                     
                     db.ref('users/' + newId).set(newUser);
@@ -214,14 +240,13 @@
                 setActivePage("main");
             };
 
-            // Открытие чата ПРЯМО В ТАБЕ (никуда не переходит)
             const openUserChat = (userId) => {
                 if (!currentUser) return alert("Сначала войдите в аккаунт!");
                 if (!openedChats.includes(userId)) {
                     setOpenedChats([userId, ...openedChats]);
                 }
                 setActiveChat(userId);
-                setSearchQuery(""); // Очищаем поиск, показывая обычный список чатов
+                setSearchQuery(""); 
             };
 
             const handleGrantAdmin = (userId) => {
@@ -400,7 +425,6 @@
 
                                             <div style={{ flex: 1, overflowY: "auto" }}>
                                                 {searchQuery.trim() ? (
-                                                    // ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ ПОИСКА
                                                     <div>
                                                         <div style={{ padding: "10px 15px", fontSize: "11px", color: "#dc2626", fontWeight: "bold", textTransform: "uppercase" }}>Глобальный поиск</div>
                                                         {searchResults.length > 0 ? searchResults.map(u => (
@@ -425,7 +449,6 @@
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    // СТАНДАРТНЫЙ СПИСОК ЧАТОВ
                                                     <>
                                                         <div onClick={() => setActiveChat("notifications")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "notifications" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
                                                             <img src={NOTIFY_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #facc15" }} />
