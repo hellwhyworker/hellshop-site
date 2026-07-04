@@ -23,8 +23,10 @@
         .form-input:focus { border-color: #dc2626; }
         .chat-item { display: flex; padding: 15px; cursor: pointer; border-bottom: 1px solid #333; transition: 0.2s; }
         .chat-item:hover { background-color: rgba(220, 38, 38, 0.1); border-left: 2px solid #dc2626; }
-        .chat-menu-btn { background: transparent; color: #fff; border: 1px solid #555; borderRadius: 4px; padding: 4px 10px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .chat-menu-btn { background: transparent; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 16px; transition: 0.2s; }
         .chat-menu-btn:hover { background-color: rgba(220, 38, 38, 0.2); border-color: #dc2626; }
+        .dropdown-item { padding: 10px 15px; cursor: pointer; color: #e5e5e5; transition: 0.2s; }
+        .dropdown-item:hover { background-color: rgba(220, 38, 38, 0.2); color: #fff; }
     </style>
 </head>
 <body>
@@ -61,7 +63,7 @@
                 settings: "Настройки аккаунта", avatar: "Аватарка профиля", changeAv: "Изменить", save: "Сохранить", logout: "Выйти", login: "Войти", register: "Регистрация",
                 authTitle: "Авторизация", regTitle: "Регистрация", noAcc: "Нет аккаунта? Создать", hasAcc: "Есть аккаунт? Войти",
                 grantAdmin: "Выдать АДМИНА", revokeAdmin: "Снять АДМИНА", accessDenied: "ДОСТУП ЗАКРЫТ 🔒", loginReq: "Войдите в аккаунт.", loginBtn: "Войти",
-                langLabel: "Язык", date: "Дата", order: "Заказ", desc: "Описание", seller: "Продавец", buyer: "Покупатель", status: "Статус", sum: "Сумма",
+                langLabel: "Язык / Language", date: "Дата", order: "Заказ", desc: "Описание", seller: "Продавец", buyer: "Покупатель", status: "Статус", sum: "Сумма",
                 roleAllmighty: "ВСЕМОГУЩИЙ", roleAdmin: "АДМИН", you: "Вы", regDateText: "ДАТА РЕГИСТРАЦИИ",
                 notifOn: "Включены оповещения", notifOff: "Оповещения выключены", report: "Пожаловаться", block: "Заблокировать", blocked: "ЗАБЛОКИРОВАН",
                 ticketCreateWarn: "Время ожидания ответа увеличено в связи с высокой загруженностью запросами. Приносим извинения.",
@@ -82,7 +84,7 @@
                 settings: "Account Settings", avatar: "Avatar", changeAv: "Change", save: "Save", logout: "Logout", login: "Login", register: "Register",
                 authTitle: "Auth", regTitle: "Register", noAcc: "No account? Create", hasAcc: "Have an account? Login",
                 grantAdmin: "Grant ADMIN", revokeAdmin: "Revoke ADMIN", accessDenied: "ACCESS DENIED 🔒", loginReq: "Log in to view.", loginBtn: "Log in",
-                langLabel: "Language", date: "Date", order: "Order", desc: "Description", seller: "Seller", buyer: "Buyer", status: "Status", sum: "Amount",
+                langLabel: "Language / Язык", date: "Date", order: "Order", desc: "Description", seller: "Seller", buyer: "Buyer", status: "Status", sum: "Amount",
                 roleAllmighty: "ALMIGHTY", roleAdmin: "ADMIN", you: "You", regDateText: "REGISTERED ON",
                 notifOn: "Notifs On", notifOff: "Notifs Off", report: "Report", block: "Block", blocked: "BLOCKED",
                 ticketCreateWarn: "Response time is increased due to high hellish workload. Apologies.",
@@ -168,8 +170,17 @@
 
             // FIREBASE & АВТОУДАЛЕНИЕ ЖАЛОБ (12 часов)
             React.useEffect(() => {
-                db.ref('users').on('value', snap => setUsersDatabase(Object.values(snap.val() || {})));
-                db.ref('privateMessages').on('value', snap => setPrivateMessages(Object.values(snap.val() || {})));
+                db.ref('users').on('value', snap => {
+                    const data = snap.val();
+                    if (data) setUsersDatabase(Object.values(data));
+                    else setUsersDatabase([]);
+                });
+
+                db.ref('privateMessages').on('value', snap => {
+                    const data = snap.val();
+                    if (data) setPrivateMessages(Object.values(data));
+                    else setPrivateMessages([]);
+                });
                 
                 db.ref('reports').on('value', snap => {
                     const data = snap.val();
@@ -177,7 +188,7 @@
                         const now = Date.now();
                         const valid = [];
                         Object.entries(data).forEach(([key, r]) => {
-                            if (now - r.timestamp > 12 * 60 * 60 * 1000) db.ref('reports/' + key).remove(); // 12 часов
+                            if (now - r.timestamp > 12 * 60 * 60 * 1000) db.ref('reports/' + key).remove();
                             else valid.push({ ...r, firebaseKey: key });
                         });
                         setGlobalReports(valid.reverse());
@@ -311,8 +322,8 @@
                 const now = Date.now();
                 const myReports = globalReports.filter(r => r.fromId === currentUser.id && r.toId === reportedUserId);
                 if (myReports.length > 0) {
-                    const lastReport = myReports[0]; // массив перевернут (reverse), поэтому 0 - это последний
-                    if (now - lastReport.timestamp < 1296000000) { // 15 дней в мс
+                    const lastReport = myReports[0]; 
+                    if (now - lastReport.timestamp < 1296000000) { 
                         alert(t[lang].reportWait);
                         return;
                     }
@@ -338,7 +349,6 @@
                     let updatedMessages = [...chatMessages, newMsg];
                     let botReplyText = ""; let newMenu = supportMenu;
 
-                    // Ручная проверка для кнопок поддержки, чтобы избежать сбоев перевода
                     if (text.includes("покупателей") || text.includes("buyers") || text.includes("покупців")) { botReplyText = t[lang].ans_buyers; newMenu = "buyers"; } 
                     else if (text.includes("продавцов") || text.includes("sellers") || text.includes("продавців")) { botReplyText = t[lang].ans_sellers; } 
                     else if (text.includes("Баланс") || text.includes("Balance")) { botReplyText = t[lang].ans_balance; } 
@@ -403,7 +413,7 @@
                                 {/* ПАНЕЛЬ ЗАЯВОК ТОЛЬКО ДЛЯ АДМИНОВ */}
                                 {isAdmin && (
                                     <span onClick={() => { setActivePage("tickets"); setActiveTicketId(null); }} style={{ cursor: "pointer", transition: "0.2s", color: (activePage === "tickets" || activePage === "viewTicket") ? "#ea580c" : "#a3a3a3", borderBottom: (activePage === "tickets" || activePage === "viewTicket") ? "2px solid #ea580c" : "none", paddingBottom: "23px", paddingTop: "25px", fontWeight: "bold" }}>
-                                        {t[lang].tickets}
+                                        {t[lang].tickets} (Admin)
                                     </span>
                                 )}
                             </div>
@@ -421,7 +431,7 @@
                                     <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{t[lang].login}</button>
                                 )}
                                 {isDropdownOpen && currentUser && (
-                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "rgba(15, 0, 0, 0.95)", border: "1px solid #dc2626", borderRadius: "6px", width: "230px", zIndex: 10, padding: "10px 0", boxShadow: "0 10px 30px rgba(220,38,38,0.3)" }}>
+                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "rgba(15, 0, 0, 0.95)", border: "1px solid #dc2626", borderRadius: "6px", width: "230px", zIndex: 9999, padding: "10px 0", boxShadow: "0 10px 30px rgba(220,38,38,0.3)" }}>
                                         <div style={{ padding: "5px 15px", display: "flex", alignItems: "center", flexWrap: "nowrap", overflow: "hidden" }}>
                                             <span style={{ fontWeight: "bold", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100px" }}>{currentUser.username}</span>
                                             <RoleBadge role={currentUser.role} lang={lang} />
@@ -431,8 +441,8 @@
                                             <span style={{ color: "#4ade80" }}>{t[lang].online}</span>
                                         </div>
                                         <hr style={{ border: "0", borderTop: "1px solid #dc2626", margin: "10px 0", opacity: "0.5" }} />
-                                        <div onClick={() => { setIsSettingsModalOpen(true); setIsDropdownOpen(false); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#e5e5e5" }}>{t[lang].settings}</div>
-                                        <div onClick={handleLogout} style={{ padding: "8px 15px", cursor: "pointer", color: "#ef4444" }}>{t[lang].logout}</div>
+                                        <div className="dropdown-item" onClick={(e) => { e.stopPropagation(); setIsSettingsModalOpen(true); setIsDropdownOpen(false); }}>⚙️ {t[lang].settings}</div>
+                                        <div className="dropdown-item" onClick={(e) => { e.stopPropagation(); handleLogout(); }} style={{ color: "#ef4444" }}>🚪 {t[lang].logout}</div>
                                     </div>
                                 )}
                             </div>
@@ -440,7 +450,7 @@
                     </header>
 
                     {/* ОСНОВНОЙ КОНТЕНТ */}
-                    <main style={{ padding: "40px 50px", maxWidth: "1200px", margin: "0 auto" }}>
+                    <main style={{ padding: "40px 50px", maxWidth: "1200px", margin: "0 auto", position: "relative", zIndex: 1 }}>
                         {!currentUser && activePage !== "main" ? (
                             <div style={{ textAlign: "center", padding: "100px 0" }}><h2 style={{ color: "#dc2626" }}>{t[lang].accessDenied}</h2><button onClick={() => setIsAuthModalOpen(true)} style={{ marginTop: "20px", padding: "10px 20px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{t[lang].loginBtn}</button></div>
                         ) : (
@@ -516,7 +526,7 @@
                                     </div>
                                 )}
 
-                                {/* АДМИНКА - ПРОСМОТР ЖАЛОБЫ (БЕЗ ЧАТА, ТОЛЬКО ИНФО И КНОПКИ) */}
+                                {/* АДМИНКА - ПРОСМОТР ЖАЛОБЫ */}
                                 {activePage === "viewTicket" && activeTicketObj && isAdmin && (
                                     <div style={{ backgroundColor: "rgba(20,20,20,0.9)", border: "1px solid #ea580c", borderRadius: "8px", padding: "30px", maxWidth: "800px", margin: "0 auto", color: "#fff" }}>
                                         <div onClick={() => setActivePage("tickets")} style={{ color: "#888", cursor: "pointer", marginBottom: "20px" }}>🔙 Назад к списку</div>
@@ -616,18 +626,20 @@
                                                 <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
                                                     {typeof activeChat === "number" && activeUserObj && (
                                                         <>
-                                                            <button onClick={() => { if(!notifsEnabled) { Notification.requestPermission().then(p => { if(p==="granted") setNotifsEnabled(true); }); } else setNotifsEnabled(false); }} style={{ backgroundColor: notifsEnabled ? "rgba(74, 222, 128, 0.2)" : "rgba(255,255,255,0.1)", color: notifsEnabled ? "#4ade80" : "#888", border: notifsEnabled ? "1px solid #4ade80" : "1px solid #555", padding: "6px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
+                                                            <button onClick={() => { if(!notifsEnabled) { Notification.requestPermission().then(p => { if(p==="granted") setNotifsEnabled(true); }); } else setNotifsEnabled(false); }} style={{ backgroundColor: notifsEnabled ? "rgba(74, 222, 128, 0.2)" : "rgba(255,255,255,0.1)", color: notifsEnabled ? "#4ade80" : "#888", border: notifsEnabled ? "1px solid #4ade80" : "1px solid #555", padding: "6px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", cursor: "pointer", transition: "0.2s" }}>
                                                                 {notifsEnabled ? `✔ ${t[lang].notifOn}` : `🔕 ${t[lang].notifOff}`}
                                                             </button>
+                                                            
                                                             <div style={{ textAlign: "right", fontSize: "11px", color: "#888", borderLeft: "1px solid #333", paddingLeft: "15px" }}>
                                                                 <div style={{textTransform: "uppercase", marginBottom: "2px"}}>{t[lang].regDateText}</div><div style={{color: "#ccc"}}>{activeUserObj.regDate || "Неизвестно"}</div>
                                                             </div>
+
                                                             <div style={{ position: "relative" }}>
-                                                                <button onClick={() => setChatMenuOpen(!chatMenuOpen)} className="chat-menu-btn" style={{ background: "transparent", color: "#fff", border: "1px solid #555", borderRadius: "4px", padding: "4px 10px", cursor: "pointer", fontSize: "16px" }}>•••</button>
+                                                                <button onClick={() => setChatMenuOpen(!chatMenuOpen)} className="chat-menu-btn">•••</button>
                                                                 {chatMenuOpen && (
                                                                     <div style={{ position: "absolute", top: "100%", right: "0", marginTop: "5px", backgroundColor: "#0a0a0a", border: "1px solid #dc2626", borderRadius: "4px", zIndex: 100, width: "150px", overflow: "hidden" }}>
-                                                                        <div onClick={() => openReportModal(activeUserObj.id)} style={{ padding: "10px", color: "#fff", cursor: "pointer", borderBottom: "1px solid #333", fontSize: "13px" }}>⚠️ {t[lang].report}</div>
-                                                                        <div onClick={() => handleBlock(activeUserObj.id)} style={{ padding: "10px", color: "#ef4444", cursor: "pointer", fontSize: "13px" }}>🚫 {t[lang].block}</div>
+                                                                        <div onClick={() => openReportModal(activeUserObj.id)} className="dropdown-item">⚠️ {t[lang].report}</div>
+                                                                        <div onClick={() => handleBlock(activeUserObj.id)} className="dropdown-item" style={{color: "#ef4444"}}>🚫 {t[lang].block}</div>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -635,9 +647,9 @@
                                                     )}
                                                     {typeof activeChat === "number" && activeUserObj && isGod && activeUserObj.role !== "Всемогущий" && (
                                                         activeUserObj.role === "АДМИН" ? (
-                                                            <button onClick={() => { if(window.confirm("Снять?")) db.ref('users/' + activeUserObj.id).update({role: "Пользователь"}); }} style={{ backgroundColor: "#7f1d1d", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" }}>{t[lang].revokeAdmin}</button>
+                                                            <button onClick={() => { if(window.confirm("Снять?")) db.ref('users/' + activeUserObj.id).update({role: "Пользователь"}); }} style={{ backgroundColor: "#7f1d1d", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 0 10px rgba(127,29,29,0.5)", fontSize: "12px" }}>{t[lang].revokeAdmin}</button>
                                                         ) : (
-                                                            <button onClick={() => { if(window.confirm("Выдать?")) db.ref('users/' + activeUserObj.id).update({role: "АДМИН"}); }} style={{ backgroundColor: "#ea580c", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" }}>{t[lang].grantAdmin}</button>
+                                                            <button onClick={() => { if(window.confirm("Выдать?")) db.ref('users/' + activeUserObj.id).update({role: "АДМИН"}); }} style={{ backgroundColor: "#ea580c", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 0 10px rgba(234,88,12,0.5)", fontSize: "12px" }}>{t[lang].grantAdmin}</button>
                                                         )
                                                     )}
                                                 </div>
@@ -657,7 +669,7 @@
                                                             </div>
                                                         ))}
                                                         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
-                                                            {(supportMenu === "main" ? mainCategories : buyerCategories).map((cat, i) => <button key={i} onClick={() => handleSendMessage(cat)} style={{ backgroundColor: "rgba(20,0,0,0.8)", border: "1px solid #dc2626", color: "#fca5a5", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "13px" }}>{cat}</button> )}
+                                                            {(supportMenu === "main" ? mainCategories : buyerCategories).map((catKey, i) => <button key={i} onClick={() => handleSendMessage(catKey)} style={{ backgroundColor: "rgba(20,0,0,0.8)", border: "1px solid #dc2626", color: "#fca5a5", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "13px" }}>{catKey}</button> )}
                                                         </div>
                                                     </>
                                                 )}
@@ -701,9 +713,9 @@
                         )}
                     </main>
 
-                    {/* НАСТРОЙКИ */}
+                    {/* МОДАЛКА НАСТРОЕК */}
                     {isSettingsModalOpen && currentUser && (
-                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999 }}>
                             <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "12px", width: "400px", border: "1px solid #dc2626", boxShadow: "0 0 30px rgba(220,38,38,0.3)" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
                                     <h3 style={{ margin: 0, color: "#dc2626" }}>{t[lang].settings}</h3>
@@ -721,8 +733,6 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <input type="email" value={inputEmail} onChange={(e) => setInputEmail(e.target.value)} placeholder="Email" style={{ width: "100%", padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", boxSizing: "border-box" }} />
-                                    <input type="text" value={inputPhone} onChange={(e) => setInputPhone(e.target.value)} placeholder="Phone" style={{ width: "100%", padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", boxSizing: "border-box" }} />
                                     
                                     <div>
                                         <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "8px" }}>{t[lang].langLabel}</label>
@@ -731,10 +741,7 @@
                                         </select>
                                     </div>
 
-                                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px" }}>
-                                        <button onClick={handleLogout} style={{ padding: "12px", backgroundColor: "transparent", color: "#ef4444", border: "1px solid #ef4444", cursor: "pointer", fontWeight: "bold", borderRadius: "4px" }}>{t[lang].logout}</button>
-                                        <button onClick={handleSaveSettings} style={{ padding: "12px", backgroundColor: "#dc2626", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold", borderRadius: "4px" }}>{t[lang].save}</button>
-                                    </div>
+                                    <button onClick={handleSaveSettings} style={{ padding: "12px", backgroundColor: "#dc2626", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold", marginTop: "10px", borderRadius: "4px" }}>{t[lang].save}</button>
                                 </div>
                             </div>
                         </div>
@@ -742,13 +749,13 @@
 
                     {/* АВТОРИЗАЦИЯ */}
                     {isAuthModalOpen && (
-                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999 }}>
                             <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "8px", width: "320px", border: "1px solid #dc2626" }}>
                                 <h3 style={{ textAlign: "center", color: "#dc2626" }}>{authMode === "login" ? t[lang].authTitle : t[lang].regTitle}</h3>
                                 <p style={{ textAlign: "center", fontSize: "12px", color: "#888", cursor: "pointer", textDecoration: "underline" }} onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? t[lang].noAcc : t[lang].hasAcc}</p>
                                 <input type="text" placeholder="Login" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", boxSizing: "border-box" }} />
                                 <input type="password" placeholder="Password" value={inputPassword} onChange={(e) => setInputPassword(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "20px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", boxSizing: "border-box" }} />
-                                <button onClick={handleAuth} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", fontWeight: "bold", cursor: "pointer" }}>{authMode === "login" ? t[lang].login : t[lang].register}</button>
+                                <button onClick={handleAuth} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", fontWeight: "bold", cursor: "pointer", borderRadius: "4px" }}>{authMode === "login" ? t[lang].login : t[lang].register}</button>
                             </div>
                         </div>
                     )}
