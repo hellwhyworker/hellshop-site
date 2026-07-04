@@ -27,6 +27,9 @@
         .chat-menu-btn:hover { background-color: rgba(220, 38, 38, 0.2); border-color: #dc2626; }
         .dropdown-item { padding: 10px 15px; cursor: pointer; color: #e5e5e5; transition: 0.2s; }
         .dropdown-item:hover { background-color: rgba(220, 38, 38, 0.2); color: #fff; }
+        /* Идеальное модальное окно */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 999999; }
+        .modal-content { background-color: #0a0a0a; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid #dc2626; box-shadow: 0 0 30px rgba(220,38,38,0.3); color: #fff; }
     </style>
 </head>
 <body>
@@ -50,6 +53,7 @@
         const SUPPORT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 15 L25 35 L25 65 L50 85 L75 65 L75 35 Z" fill="%23dc2626"/><circle cx="50" cy="45" r="10" fill="%23141414"/><path d="M35 70 C 35 55, 65 55, 65 70 Z" fill="%23141414"/></svg>`;
         const NOTIFY_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 20 C35 20, 30 35, 30 50 L25 70 L75 70 L70 50 C70 35, 65 20, 50 20 Z" fill="%23facc15"/><circle cx="50" cy="80" r="7" fill="%23facc15"/></svg>`;
 
+        // Полный словарь для предотвращения ошибок
         const t = {
             ru: {
                 appTitle: "Ад HellShop ждет тебя", appSub: "Лучшие скрипты, софты и аккаунты только здесь.",
@@ -63,43 +67,67 @@
                 settings: "Настройки аккаунта", avatar: "Аватарка профиля", changeAv: "Изменить", save: "Сохранить", logout: "Выйти", login: "Войти", register: "Регистрация",
                 authTitle: "Авторизация", regTitle: "Регистрация", noAcc: "Нет аккаунта? Создать", hasAcc: "Есть аккаунт? Войти",
                 grantAdmin: "Выдать АДМИНА", revokeAdmin: "Снять АДМИНА", accessDenied: "ДОСТУП ЗАКРЫТ 🔒", loginReq: "Войдите в аккаунт.", loginBtn: "Войти",
-                langLabel: "Язык / Language", date: "Дата", order: "Заказ", desc: "Описание", seller: "Продавец", buyer: "Покупатель", status: "Статус", sum: "Сумма",
+                langLabel: "Язык", date: "Дата", order: "Заказ", desc: "Описание", seller: "Продавец", buyer: "Покупатель", status: "Статус", sum: "Сумма",
                 roleAllmighty: "ВСЕМОГУЩИЙ", roleAdmin: "АДМИН", you: "Вы", regDateText: "ДАТА РЕГИСТРАЦИИ",
                 notifOn: "Включены оповещения", notifOff: "Оповещения выключены", report: "Пожаловаться", block: "Заблокировать", blocked: "ЗАБЛОКИРОВАН",
                 ticketCreateWarn: "Время ожидания ответа увеличено в связи с высокой загруженностью запросами. Приносим извинения.",
                 tReason: "Что привело вас сюда?", tReason1: "Проблема с заказом", tReason2: "Проблема с платежом", tReason3: "Проблема с аккаунтом", tReason4: "Другое",
                 tNick: "Ваш ник (логин)", tOrder: "Номер заказа", tRole: "Вы покупатель или продавец?", tText: "Опишите проблему...", tSubmit: "Отправить жалобу",
-                tNoTickets: "Открытых жалоб нет.", tStatusNew: "Открыта", tStatusDone: "Решена",
+                tNoTickets: "Открытых жалоб нет.", tStatusNew: "Открыта", tStatusWork: "В работе", tStatusDone: "Решена",
                 tTake1: "Написать заявителю", tTake2: "Написать нарушителю", tClose: "Закрыть жалобу",
-                reportSuccess: "Жалоба успешно отправлена администрации.", reportWait: "Вы уже жаловались на этого пользователя недавно. Подождите 15 дней.", reportTitle: "Жалоба на пользователя ID "
+                reportSuccess: "Жалоба успешно отправлена администрации.", reportWait: "Вы уже жаловались на этого пользователя недавно. Подождите 15 дней.", reportTitle: "Жалоба на пользователя ID ",
+                botWelcome: "Бот поддержки HellShop поможет тебе найти ответ на важные вопросы!\n\nНажимай на кнопки ниже, чтобы выбрать тему своего обращения.",
+                cat_buyers: "🛒 Для покупателей", cat_sellers: "🤑 Для продавцов", cat_balance: "💰 Баланс и выплаты", cat_security: "🔒 Безопасность", cat_rules: "📜 Правила сайта", cat_bug: "🐛 Нашел баг",
+                cat_back: "🔙 Назад", cat_how: "❓ Как проходит сделка?", cat_delivery: "📦 Способы получения", cat_chat: "💬 Чат с продавцом", cat_tips: "💡 Советы", cat_pay: "💳 Оплата товаров", cat_guarantee: "✅ Гарантии и возврат", cat_reviews: "⭐ Отзывы",
+                ans_buyers: "HellShop — это маркетплейс.\nКак купить товар?\n1️⃣ Нажмите «Купить»;\n2️⃣ Выберите способ оплаты;\n3️⃣ Следуйте инструкции.",
+                ans_sellers: "Хотите начать продавать?\n1. Регистрация.\n2. Создайте объявление.\n3. Ожидайте покупателей!",
+                ans_balance: "Выплаты производятся на карты и крипту.", ans_security: "НИКОГДА не переходите в Telegram. Общайтесь только в чате HellShop.",
+                ans_rules: "Нарушение = вечная блокировка.", ans_bug: "Опишите ошибку, мы её исправим.",
+                ans_how: "1️⃣ Оплата в резерв.\n2️⃣ Продавец выдаёт товар.\n3️⃣ Подтверждаете заказ.",
+                ans_delivery: "Автоматически, через трейд или лично в чате.", ans_chat: "После оплаты откроется чат с продавцом.",
+                ans_tips: "Снимайте процесс покупки на видео!", ans_pay: "Принимаем карты РФ, мира, СБП и крипту.",
+                ans_guarantee: "Спор = возврат денег при обмане.", ans_reviews: "Оставляйте отзывы после сделки!"
             },
             en: {
                 appTitle: "Hell awaits you in HellShop", appSub: "Best scripts, software, and accounts.",
                 purchases: "Purchases", sales: "Sales", messages: "Messages", finances: "Finances", tickets: "Reports",
                 chats: "Chats", search: "Search by ID...", globSearch: "Global search", noRes: "No one found",
                 notif: "Notifications ✔", sys: "System", noSysNotif: "No system notifications.",
-                support: "Support ✔", botStatus: "Online 24/7", botHelp: "Support bot will help...", personal: "Private chat", online: "Online",
+                support: "Support ✔", botStatus: "Online 24/7", botHelp: "Support bot will help...",
+                personal: "Private chat", online: "Online",
                 historyEmpty: "History is empty.", sysLock: "System chat. Sending messages is forbidden.",
                 typeMsg: "Type a message...", send: "Send", startChat: "Start chat with ",
                 settings: "Account Settings", avatar: "Avatar", changeAv: "Change", save: "Save", logout: "Logout", login: "Login", register: "Register",
                 authTitle: "Auth", regTitle: "Register", noAcc: "No account? Create", hasAcc: "Have an account? Login",
                 grantAdmin: "Grant ADMIN", revokeAdmin: "Revoke ADMIN", accessDenied: "ACCESS DENIED 🔒", loginReq: "Log in to view.", loginBtn: "Log in",
-                langLabel: "Language / Язык", date: "Date", order: "Order", desc: "Description", seller: "Seller", buyer: "Buyer", status: "Status", sum: "Amount",
+                langLabel: "Language", date: "Date", order: "Order", desc: "Description", seller: "Seller", buyer: "Buyer", status: "Status", sum: "Amount",
                 roleAllmighty: "ALMIGHTY", roleAdmin: "ADMIN", you: "You", regDateText: "REGISTERED ON",
                 notifOn: "Notifs On", notifOff: "Notifs Off", report: "Report", block: "Block", blocked: "BLOCKED",
                 ticketCreateWarn: "Response time is increased due to high hellish workload. Apologies.",
                 tReason: "What brings you here?", tReason1: "Order problem", tReason2: "Payment problem", tReason3: "Account problem", tReason4: "Other",
                 tNick: "Your username", tOrder: "Order Number", tRole: "Are you a buyer or seller?", tText: "Describe your problem...", tSubmit: "Submit Report",
-                tNoTickets: "No open reports.", tStatusNew: "Open", tStatusDone: "Solved",
+                tNoTickets: "No open reports.", tStatusNew: "Open", tStatusWork: "In Progress", tStatusDone: "Solved",
                 tTake1: "Message Reporter", tTake2: "Message Reported User", tClose: "Close Report",
-                reportSuccess: "Report successfully sent to administration.", reportWait: "You have already reported this user recently. Wait 15 days.", reportTitle: "Report on User ID "
+                reportSuccess: "Report successfully sent to administration.", reportWait: "You have already reported this user recently. Wait 15 days.", reportTitle: "Report on User ID ",
+                botWelcome: "HellShop Support Bot will help you find answers to important questions!\n\nClick the buttons below to choose a topic.",
+                cat_buyers: "🛒 For buyers", cat_sellers: "🤑 For sellers", cat_balance: "💰 Balance & payouts", cat_security: "🔒 Security", cat_rules: "📜 Site rules", cat_bug: "🐛 Found a bug",
+                cat_back: "🔙 Back", cat_how: "❓ How does a deal work?", cat_delivery: "📦 Delivery methods", cat_chat: "💬 Chat with seller", cat_tips: "💡 Tips", cat_pay: "💳 Payment methods", cat_guarantee: "✅ Guarantees & refunds", cat_reviews: "⭐ Reviews",
+                ans_buyers: "HellShop is a marketplace.\nHow to buy?\n1️⃣ Click «Buy»;\n2️⃣ Choose payment method;\n3️⃣ Follow instructions.",
+                ans_sellers: "Want to start selling?\n1. Register.\n2. Create a listing.\n3. Wait for buyers!",
+                ans_balance: "Payouts are made to cards and crypto.", ans_security: "NEVER switch to Telegram. Communicate ONLY in HellShop chat.",
+                ans_rules: "Violation = permanent ban.", ans_bug: "Describe the bug, we will fix it.",
+                ans_how: "1️⃣ Payment goes to reserve.\n2️⃣ Seller delivers goods.\n3️⃣ You confirm the order.",
+                ans_delivery: "Automatically, via trade or personally in chat.", ans_chat: "After payment, a chat with the seller will open.",
+                ans_tips: "Record the buying process on video!", ans_pay: "We accept global cards and crypto.",
+                ans_guarantee: "Dispute = refund in case of scam.", ans_reviews: "Leave reviews after the deal!"
             },
             uk: {
                 appTitle: "Пекло HellShop чекає на тебе", appSub: "Найкращі скрипти, софти та акаунти.",
                 purchases: "Покупки", sales: "Продажі", messages: "Повідомлення", finances: "Фінанси", tickets: "Скарги",
                 chats: "Чати", search: "Знайти за ID...", globSearch: "Глобальний пошук", noRes: "Нікого не знайдено",
                 notif: "Сповіщення ✔", sys: "Система", noSysNotif: "Немає системних сповіщень.",
-                support: "Підтримка ✔", botStatus: "В мережі 24/7", botHelp: "Бот підтримки...", personal: "Особистий чат", online: "В мережі",
+                support: "Підтримка ✔", botStatus: "В мережі 24/7", botHelp: "Бот підтримки...",
+                personal: "Особистий чат", online: "В мережі",
                 historyEmpty: "Історія порожня.", sysLock: "Системний чат. Відправка заборонена.",
                 typeMsg: "Введіть повідомлення...", send: "Відправити", startChat: "Почніть листування з ",
                 settings: "Налаштування", avatar: "Аватарка", changeAv: "Змінити", save: "Зберегти", logout: "Вийти", login: "Увійти", register: "Реєстрація",
@@ -111,19 +139,30 @@
                 ticketCreateWarn: "Час очікування збільшено через високе навантаження пекла. Просимо вибачення.",
                 tReason: "Що привело вас сюди?", tReason1: "Проблема із замовленням", tReason2: "Проблема з платежем", tReason3: "Проблема з акаунтом", tReason4: "Інше",
                 tNick: "Ваш нік", tOrder: "Номер замовлення", tRole: "Ви покупець чи продавець?", tText: "Опишіть проблему...", tSubmit: "Відправити скаргу",
-                tNoTickets: "Немає відкритих скарг.", tStatusNew: "Відкрита", tStatusDone: "Вирішена",
+                tNoTickets: "Немає відкритих скарг.", tStatusNew: "Відкрита", tStatusWork: "В роботі", tStatusDone: "Вирішена",
                 tTake1: "Написати заявнику", tTake2: "Написати порушнику", tClose: "Закрити скаргу",
-                reportSuccess: "Скаргу успішно надіслано адміністрації.", reportWait: "Ви вже скаржилися на цього користувача нещодавно. Зачекайте 15 днів.", reportTitle: "Скарга на користувача ID "
+                reportSuccess: "Скаргу успішно надіслано адміністрації.", reportWait: "Ви вже скаржилися на цього користувача нещодавно. Зачекайте 15 днів.", reportTitle: "Скарга на користувача ID ",
+                botWelcome: "Бот підтримки HellShop допоможе тобі знайти відповідь на важливі питання!\n\nНатискай на кнопки нижче, щоб обрати тему свого звернення.",
+                cat_buyers: "🛒 Для покупців", cat_sellers: "🤑 Для продавців", cat_balance: "💰 Баланс та виплати", cat_security: "🔒 Безпека", cat_rules: "📜 Правила сайту", cat_bug: "🐛 Знайшов баг",
+                cat_back: "🔙 Назад", cat_how: "❓ Як проходить угода?", cat_delivery: "📦 Способи отримання", cat_chat: "💬 Чат із продавцем", cat_tips: "💡 Поради", cat_pay: "💳 Оплата товарів", cat_guarantee: "✅ Гарантії та повернення", cat_reviews: "⭐ Відгуки",
+                ans_buyers: "HellShop — це маркетплейс.\nЯк купити товар?\n1️⃣ Натисніть «Купити»;\n2️⃣ Оберіть спосіб оплати;\n3️⃣ Дотримуйтесь інструкції.",
+                ans_sellers: "Бажаєте почати продавати?\n1. Реєстрація.\n2. Створіть оголошення.\n3. Очікуйте покупців!",
+                ans_balance: "Виплати здійснюються на картки та крипту.", ans_security: "НІКОЛИ не переходьте в Telegram. Спілкуйтеся ТІЛЬКИ в чаті HellShop.",
+                ans_rules: "Порушення = вічне блокування.", ans_bug: "Опишіть помилку, ми її виправимо.",
+                ans_how: "1️⃣ Оплата в резерв.\n2️⃣ Продавець видає товар.\n3️⃣ Підтверджуєте замовлення.",
+                ans_delivery: "Автоматично, через трейд або особисто в чаті.", ans_chat: "Після оплати відкриється чат із продавцем.",
+                ans_tips: "Знімайте процес покупки на відео!", ans_pay: "Приймаємо картки світу та крипту.",
+                ans_guarantee: "Суперечка = повернення грошей при обмані.", ans_reviews: "Залишайте відгуки після угоди!"
             }
         };
 
-        const mainCategories = ["🛒 Для покупателей", "🤑 Для продавцов", "💰 Баланс и выплаты", "🔒 Безопасность", "📜 Правила сайта", "🐛 Нашел баг"];
-        const buyerCategories = ["🔙 Назад", "❓ Как проходит сделка?", "📦 Способы получения", "💬 Чат с продавцом", "💡 Советы", "💳 Оплата товаров", "✅ Гарантии и возврат", "⭐ Отзывы"];
+        const mainCategories = ["cat_buyers", "cat_sellers", "cat_balance", "cat_security", "cat_rules", "cat_bug"];
+        const buyerCategories = ["cat_back", "cat_how", "cat_delivery", "cat_chat", "cat_tips", "cat_pay", "cat_guarantee", "cat_reviews"];
 
         function RoleBadge({ role, lang }) {
             if (!role || role === "Пользователь") return null;
-            if (role === "Всемогущий") return <span style={{ background: "linear-gradient(45deg, #dc2626, #7f1d1d)", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", boxShadow: "0 0 8px rgba(220,38,38,0.8)", marginLeft: "8px", whiteSpace: "nowrap" }}>{t[lang].roleAllmighty}</span>;
-            if (role === "АДМИН") return <span style={{ background: "#ea580c", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", marginLeft: "8px", whiteSpace: "nowrap" }}>{t[lang].roleAdmin}</span>;
+            if (role === "Всемогущий") return <span style={{ background: "linear-gradient(45deg, #dc2626, #7f1d1d)", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", boxShadow: "0 0 8px rgba(220,38,38,0.8)", marginLeft: "8px", whiteSpace: "nowrap" }}>{t[lang]?.roleAllmighty || "ВСЕМОГУЩИЙ"}</span>;
+            if (role === "АДМИН") return <span style={{ background: "#ea580c", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", marginLeft: "8px", whiteSpace: "nowrap" }}>{t[lang]?.roleAdmin || "АДМИН"}</span>;
             return null;
         }
 
@@ -140,23 +179,27 @@
                 return saved ? JSON.parse(saved) : null;
             });
 
-            // ИЗОЛИРОВАННЫЕ ДАННЫЕ (для чистых чатов новорегов)
+            // ИЗОЛИРОВАННЫЕ ДАННЫЕ (для чистых чатов новорегов и поддержки)
             const [chatMessages, setChatMessages] = React.useState([]);
             const [openedChats, setOpenedChats] = React.useState([]);
             const [supportMenu, setSupportMenu] = React.useState("main");
 
+            // Загрузка состояний пользователя
             React.useEffect(() => {
                 if (currentUser) {
                     const savedChats = localStorage.getItem("hs_opened_" + currentUser.id);
                     setOpenedChats(savedChats ? JSON.parse(savedChats) : []);
+                    
                     const savedMsgs = localStorage.getItem("hs_support_" + currentUser.id);
                     setChatMessages(savedMsgs ? JSON.parse(savedMsgs) : [{ sender: "Бот", avatar: SUPPORT_AVATAR, text: t[lang].botWelcome, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+                    
                     setSupportMenu(localStorage.getItem("hs_menu_" + currentUser.id) || "main");
                 } else {
                     setOpenedChats([]); setChatMessages([]); setSupportMenu("main");
                 }
-            }, [currentUser?.id, lang]);
+            }, [currentUser?.id]);
 
+            // Сохранение состояний пользователя
             React.useEffect(() => {
                 if (currentUser) {
                     localStorage.setItem("hs_opened_" + currentUser.id, JSON.stringify(openedChats));
@@ -217,6 +260,7 @@
                 });
             }, [privateMessages, currentUser, notifsEnabled, usersDatabase]);
 
+            // Синхронизация данных текущего юзера
             React.useEffect(() => {
                 if (currentUser && usersDatabase.length > 0) {
                     const updatedMe = usersDatabase.find(u => u.id === currentUser.id);
@@ -242,6 +286,8 @@
             const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
             const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
             const [authMode, setAuthMode] = React.useState("login");
+            
+            // ФОРМЫ
             const [inputUsername, setInputUsername] = React.useState("");
             const [inputPassword, setInputPassword] = React.useState("");
             const [typedMessage, setTypedMessage] = React.useState("");
@@ -250,7 +296,7 @@
             const [inputPhone, setInputPhone] = React.useState("");
             const [inputAvatar, setInputAvatar] = React.useState("");
 
-            // ЖАЛОБЫ (ТИКЕТЫ)
+            // ЖАЛОБЫ
             const [reportedUserId, setReportedUserId] = React.useState(null);
             const [ticketCat, setTicketCat] = React.useState("");
             const [ticketOrder, setTicketOrder] = React.useState("");
@@ -260,6 +306,31 @@
 
             const isAdmin = currentUser?.role === "Всемогущий" || currentUser?.role === "АДМИН";
             const isGod = currentUser?.role === "Всемогущий";
+
+            // Инициализация полей настроек при открытии модалки
+            React.useEffect(() => {
+                if (currentUser && isSettingsModalOpen) {
+                    setInputEmail(currentUser.email || "");
+                    setInputPhone(currentUser.phone || "");
+                    setInputAvatar(currentUser.avatar !== DEFAULT_AVATAR ? currentUser.avatar : "");
+                }
+            }, [isSettingsModalOpen, currentUser]);
+
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setInputAvatar(reader.result);
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const handleSaveSettings = () => {
+                if (!currentUser) return;
+                const updatedUser = { ...currentUser, email: inputEmail, phone: inputPhone, avatar: inputAvatar.trim() ? inputAvatar : DEFAULT_AVATAR };
+                db.ref('users/' + currentUser.id).update(updatedUser);
+                setIsSettingsModalOpen(false);
+            };
 
             const handleAuth = () => {
                 if (!inputUsername.trim() || !inputPassword.trim()) return;
@@ -339,32 +410,31 @@
                 setTicketCat(""); setTicketOrder(""); setTicketText(""); setReportedUserId(null); setActivePage("messages");
             };
 
-            const handleSendMessage = (text = typedMessage) => {
+            const handleSendMessage = (text = typedMessage, isCategory = false) => {
                 if (!text.trim()) return;
                 const currentTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
                 if (activeChat === "support") {
-                    if (text === "🔙 Назад" || text === "🔙 Back") { setSupportMenu("main"); return; }
-                    const newMsg = { sender: currentUser ? currentUser.username : t[lang].you, avatar: currentUser ? currentUser.avatar : DEFAULT_AVATAR, text: text, time: currentTime };
+                    // Обработка кнопки назад
+                    if (text === "cat_back") { setSupportMenu("main"); return; }
+                    
+                    // Переводим текст категории для отображения в чате
+                    const userText = isCategory ? (t[lang][text] || text) : text;
+                    const newMsg = { sender: currentUser ? currentUser.username : t[lang].you, avatar: currentUser ? currentUser.avatar : DEFAULT_AVATAR, text: userText, time: currentTime };
                     let updatedMessages = [...chatMessages, newMsg];
-                    let botReplyText = ""; let newMenu = supportMenu;
+                    let botReplyText = ""; 
+                    let newMenu = supportMenu;
 
-                    if (text.includes("покупателей") || text.includes("buyers") || text.includes("покупців")) { botReplyText = t[lang].ans_buyers; newMenu = "buyers"; } 
-                    else if (text.includes("продавцов") || text.includes("sellers") || text.includes("продавців")) { botReplyText = t[lang].ans_sellers; } 
-                    else if (text.includes("Баланс") || text.includes("Balance")) { botReplyText = t[lang].ans_balance; } 
-                    else if (text.includes("Безопасность") || text.includes("Security") || text.includes("Безпека")) { botReplyText = t[lang].ans_security; } 
-                    else if (text.includes("Правила") || text.includes("rules")) { botReplyText = t[lang].ans_rules; } 
-                    else if (text.includes("баг") || text.includes("bug")) { botReplyText = t[lang].ans_bug; }
-                    else if (text.includes("сделка") || text.includes("deal") || text.includes("угода")) { botReplyText = t[lang].ans_how; }
-                    else if (text.includes("Способы") || text.includes("Delivery")) { botReplyText = t[lang].ans_delivery; }
-                    else if (text.includes("Чат") || text.includes("Chat")) { botReplyText = t[lang].ans_chat; }
-                    else if (text.includes("Советы") || text.includes("Tips") || text.includes("Поради")) { botReplyText = t[lang].ans_tips; }
-                    else if (text.includes("Оплата") || text.includes("Payment")) { botReplyText = t[lang].ans_pay; }
-                    else if (text.includes("Гарантии") || text.includes("Guarantees")) { botReplyText = t[lang].ans_guarantee; }
-                    else if (text.includes("Отзывы") || text.includes("Reviews") || text.includes("Відгуки")) { botReplyText = t[lang].ans_reviews; }
+                    // Обработка логики по ключам
+                    if (isCategory) {
+                        if (text === "cat_buyers") newMenu = "buyers";
+                        const ansKey = text.replace("cat_", "ans_");
+                        if (t[lang][ansKey]) botReplyText = t[lang][ansKey];
+                    }
 
                     if (botReplyText) updatedMessages.push({ sender: "Бот", avatar: SUPPORT_AVATAR, text: botReplyText, time: currentTime });
-                    setChatMessages(updatedMessages); if (newMenu !== supportMenu) setSupportMenu(newMenu);
+                    setChatMessages(updatedMessages); 
+                    if (newMenu !== supportMenu) setSupportMenu(newMenu);
                 } 
                 else if (typeof activeChat === "number") {
                     db.ref('privateMessages').push({ fromId: currentUser.id, toId: activeChat, text: text, time: currentTime });
@@ -431,7 +501,7 @@
                                     <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{t[lang].login}</button>
                                 )}
                                 {isDropdownOpen && currentUser && (
-                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "rgba(15, 0, 0, 0.95)", border: "1px solid #dc2626", borderRadius: "6px", width: "230px", zIndex: 9999, padding: "10px 0", boxShadow: "0 10px 30px rgba(220,38,38,0.3)" }}>
+                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "rgba(15, 0, 0, 0.95)", border: "1px solid #dc2626", borderRadius: "6px", width: "230px", zIndex: 10, padding: "10px 0", boxShadow: "0 10px 30px rgba(220,38,38,0.3)" }}>
                                         <div style={{ padding: "5px 15px", display: "flex", alignItems: "center", flexWrap: "nowrap", overflow: "hidden" }}>
                                             <span style={{ fontWeight: "bold", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100px" }}>{currentUser.username}</span>
                                             <RoleBadge role={currentUser.role} lang={lang} />
@@ -669,7 +739,7 @@
                                                             </div>
                                                         ))}
                                                         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
-                                                            {(supportMenu === "main" ? mainCategories : buyerCategories).map((catKey, i) => <button key={i} onClick={() => handleSendMessage(catKey)} style={{ backgroundColor: "rgba(20,0,0,0.8)", border: "1px solid #dc2626", color: "#fca5a5", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "13px" }}>{catKey}</button> )}
+                                                            {(supportMenu === "main" ? mainCategories : buyerCategories).map((catKey, i) => <button key={i} onClick={() => handleSendMessage(catKey, true)} style={{ backgroundColor: "rgba(20,0,0,0.8)", border: "1px solid #dc2626", color: "#fca5a5", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontSize: "13px" }}>{t[lang][catKey] || catKey}</button> )}
                                                         </div>
                                                     </>
                                                 )}
@@ -713,10 +783,10 @@
                         )}
                     </main>
 
-                    {/* МОДАЛКА НАСТРОЕК */}
+                    {/* МОДАЛКА НАСТРОЕК С Z-INDEX: 999999 (НЕ БУДЕТ ЧЕРНОГО ЭКРАНА) */}
                     {isSettingsModalOpen && currentUser && (
-                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999 }}>
-                            <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "12px", width: "400px", border: "1px solid #dc2626", boxShadow: "0 0 30px rgba(220,38,38,0.3)" }}>
+                        <div className="modal-overlay" onClick={() => setIsSettingsModalOpen(false)}>
+                            <div className="modal-content" onClick={e => e.stopPropagation()}>
                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
                                     <h3 style={{ margin: 0, color: "#dc2626" }}>{t[lang].settings}</h3>
                                     <button onClick={() => setIsSettingsModalOpen(false)} style={{ background: "none", border: "none", color: "#888", fontSize: "20px", cursor: "pointer" }}>×</button>
@@ -733,11 +803,15 @@
                                             </label>
                                         </div>
                                     </div>
+                                    <input type="email" value={inputEmail} onChange={(e) => setInputEmail(e.target.value)} placeholder="Email" style={{ width: "100%", padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", boxSizing: "border-box" }} />
+                                    <input type="text" value={inputPhone} onChange={(e) => setInputPhone(e.target.value)} placeholder="Phone" style={{ width: "100%", padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", boxSizing: "border-box" }} />
                                     
                                     <div>
                                         <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "8px" }}>{t[lang].langLabel}</label>
                                         <select value={lang} onChange={e => setLang(e.target.value)} style={{ width: "100%", padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", outline: "none", cursor: "pointer" }}>
-                                            <option value="ru">Русский 🇷🇺</option><option value="en">English 🇬🇧</option><option value="uk">Українська 🇺🇦</option>
+                                            <option value="ru">Русский 🇷🇺</option>
+                                            <option value="en">English 🇬🇧</option>
+                                            <option value="uk">Українська 🇺🇦</option>
                                         </select>
                                     </div>
 
@@ -749,8 +823,8 @@
 
                     {/* АВТОРИЗАЦИЯ */}
                     {isAuthModalOpen && (
-                        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999 }}>
-                            <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "8px", width: "320px", border: "1px solid #dc2626" }}>
+                        <div className="modal-overlay" onClick={() => setIsAuthModalOpen(false)}>
+                            <div className="modal-content" onClick={e => e.stopPropagation()}>
                                 <h3 style={{ textAlign: "center", color: "#dc2626" }}>{authMode === "login" ? t[lang].authTitle : t[lang].regTitle}</h3>
                                 <p style={{ textAlign: "center", fontSize: "12px", color: "#888", cursor: "pointer", textDecoration: "underline" }} onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? t[lang].noAcc : t[lang].hasAcc}</p>
                                 <input type="text" placeholder="Login" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", boxSizing: "border-box" }} />
