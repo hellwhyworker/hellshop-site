@@ -21,8 +21,10 @@
         .neon-text { text-shadow: 0 0 10px rgba(220, 38, 38, 0.7); }
         .form-input { width: 100%; padding: 12px; background-color: #0a0a0a; border: 1px solid #333; color: #fff; border-radius: 4px; outline: none; box-sizing: border-box; font-family: inherit; margin-bottom: 20px; }
         .form-input:focus { border-color: #dc2626; }
-        .kb-folder { background: rgba(20,0,0,0.6); border: 1px solid #333; border-radius: 6px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; }
-        .kb-folder:hover { background: rgba(220,38,38,0.1); border-color: #dc2626; }
+        .chat-item { display: flex; padding: 15px; cursor: pointer; border-bottom: 1px solid #333; transition: 0.2s; }
+        .chat-item:hover { background-color: rgba(220, 38, 38, 0.1); border-left: 2px solid #dc2626; }
+        .chat-menu-btn { background: transparent; color: #fff; border: 1px solid #555; borderRadius: 4px; padding: 4px 10px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .chat-menu-btn:hover { background-color: rgba(220, 38, 38, 0.2); border-color: #dc2626; }
     </style>
 </head>
 <body>
@@ -47,25 +49,87 @@
         const NOTIFY_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 20 C35 20, 30 35, 30 50 L25 70 L75 70 L70 50 C70 35, 65 20, 50 20 Z" fill="%23facc15"/><circle cx="50" cy="80" r="7" fill="%23facc15"/></svg>`;
 
         const t = {
-            ru: { purchases: "Покупки", sales: "Продажи", messages: "Сообщения", finances: "Финансы", kb: "База знаний", tickets: "Заявки", search: "Найти по ID...", lang: "Язык" },
-            en: { purchases: "Purchases", sales: "Sales", messages: "Messages", finances: "Finances", kb: "Knowledge Base", tickets: "Tickets", search: "Search ID...", lang: "Language" },
-            uk: { purchases: "Покупки", sales: "Продажі", messages: "Повідомлення", finances: "Фінанси", kb: "База знань", tickets: "Заявки", search: "Знайти за ID...", lang: "Мова" }
+            ru: {
+                appTitle: "Ад HellShop ждет тебя", appSub: "Лучшие скрипты, софты и аккаунты только здесь.",
+                purchases: "Покупки", sales: "Продажи", messages: "Сообщения", finances: "Финансы", tickets: "Заявки",
+                chats: "Чаты", search: "Найти по ID...", globSearch: "Глобальный поиск", noRes: "Никого не найдено",
+                notif: "Уведомления ✔", sys: "Система", noSysNotif: "Нет системных уведомлений.",
+                support: "Поддержка ✔", botStatus: "В сети 24/7", botHelp: "Бот поддержки поможет...",
+                personal: "Личный чат", online: "В сети",
+                historyEmpty: "История пуста.", sysLock: "Системный чат. Отправка сообщений запрещена.",
+                typeMsg: "Введите сообщение...", send: "Отправить", startChat: "Начните переписку с ",
+                settings: "Настройки аккаунта", avatar: "Аватарка профиля", changeAv: "Изменить", save: "Сохранить", logout: "Выйти", login: "Войти", register: "Регистрация",
+                authTitle: "Авторизация", regTitle: "Регистрация", noAcc: "Нет аккаунта? Создать", hasAcc: "Есть аккаунт? Войти",
+                grantAdmin: "Выдать АДМИНА", revokeAdmin: "Снять АДМИНА", accessDenied: "ДОСТУП ЗАКРЫТ 🔒", loginReq: "Войдите в аккаунт.", loginBtn: "Войти",
+                langLabel: "Язык", date: "Дата", order: "Заказ", desc: "Описание", seller: "Продавец", buyer: "Покупатель", status: "Статус", sum: "Сумма",
+                roleAllmighty: "ВСЕМОГУЩИЙ", roleAdmin: "АДМИН", you: "Вы", regDateText: "ДАТА РЕГИСТРАЦИИ",
+                notifOn: "Включены оповещения", notifOff: "Оповещения выключены", report: "Пожаловаться", block: "Заблокировать", blocked: "ЗАБЛОКИРОВАН",
+                ticketCreateWarn: "Время ожидания ответа увеличено в связи с высокой загруженностью запросами. Приносим извинения.",
+                tReason: "Что привело вас сюда?", tReason1: "Проблема с заказом", tReason2: "Проблема с платежом", tReason3: "Проблема с аккаунтом", tReason4: "Другое",
+                tNick: "Ваш ник (логин)", tOrder: "Номер заказа", tRole: "Вы покупатель или продавец?", tText: "Опишите проблему...", tSubmit: "Отправить жалобу",
+                tNoTickets: "Открытых жалоб нет.", tStatusNew: "Открыта", tStatusDone: "Решена",
+                tTake1: "Написать заявителю", tTake2: "Написать нарушителю", tClose: "Закрыть жалобу",
+                reportSuccess: "Жалоба успешно отправлена администрации.", reportWait: "Вы уже жаловались на этого пользователя недавно. Подождите 15 дней.", reportTitle: "Жалоба на пользователя ID "
+            },
+            en: {
+                appTitle: "Hell awaits you in HellShop", appSub: "Best scripts, software, and accounts.",
+                purchases: "Purchases", sales: "Sales", messages: "Messages", finances: "Finances", tickets: "Reports",
+                chats: "Chats", search: "Search by ID...", globSearch: "Global search", noRes: "No one found",
+                notif: "Notifications ✔", sys: "System", noSysNotif: "No system notifications.",
+                support: "Support ✔", botStatus: "Online 24/7", botHelp: "Support bot will help...", personal: "Private chat", online: "Online",
+                historyEmpty: "History is empty.", sysLock: "System chat. Sending messages is forbidden.",
+                typeMsg: "Type a message...", send: "Send", startChat: "Start chat with ",
+                settings: "Account Settings", avatar: "Avatar", changeAv: "Change", save: "Save", logout: "Logout", login: "Login", register: "Register",
+                authTitle: "Auth", regTitle: "Register", noAcc: "No account? Create", hasAcc: "Have an account? Login",
+                grantAdmin: "Grant ADMIN", revokeAdmin: "Revoke ADMIN", accessDenied: "ACCESS DENIED 🔒", loginReq: "Log in to view.", loginBtn: "Log in",
+                langLabel: "Language", date: "Date", order: "Order", desc: "Description", seller: "Seller", buyer: "Buyer", status: "Status", sum: "Amount",
+                roleAllmighty: "ALMIGHTY", roleAdmin: "ADMIN", you: "You", regDateText: "REGISTERED ON",
+                notifOn: "Notifs On", notifOff: "Notifs Off", report: "Report", block: "Block", blocked: "BLOCKED",
+                ticketCreateWarn: "Response time is increased due to high hellish workload. Apologies.",
+                tReason: "What brings you here?", tReason1: "Order problem", tReason2: "Payment problem", tReason3: "Account problem", tReason4: "Other",
+                tNick: "Your username", tOrder: "Order Number", tRole: "Are you a buyer or seller?", tText: "Describe your problem...", tSubmit: "Submit Report",
+                tNoTickets: "No open reports.", tStatusNew: "Open", tStatusDone: "Solved",
+                tTake1: "Message Reporter", tTake2: "Message Reported User", tClose: "Close Report",
+                reportSuccess: "Report successfully sent to administration.", reportWait: "You have already reported this user recently. Wait 15 days.", reportTitle: "Report on User ID "
+            },
+            uk: {
+                appTitle: "Пекло HellShop чекає на тебе", appSub: "Найкращі скрипти, софти та акаунти.",
+                purchases: "Покупки", sales: "Продажі", messages: "Повідомлення", finances: "Фінанси", tickets: "Скарги",
+                chats: "Чати", search: "Знайти за ID...", globSearch: "Глобальний пошук", noRes: "Нікого не знайдено",
+                notif: "Сповіщення ✔", sys: "Система", noSysNotif: "Немає системних сповіщень.",
+                support: "Підтримка ✔", botStatus: "В мережі 24/7", botHelp: "Бот підтримки...", personal: "Особистий чат", online: "В мережі",
+                historyEmpty: "Історія порожня.", sysLock: "Системний чат. Відправка заборонена.",
+                typeMsg: "Введіть повідомлення...", send: "Відправити", startChat: "Почніть листування з ",
+                settings: "Налаштування", avatar: "Аватарка", changeAv: "Змінити", save: "Зберегти", logout: "Вийти", login: "Увійти", register: "Реєстрація",
+                authTitle: "Авторизація", regTitle: "Реєстрація", noAcc: "Немає акаунту? Створити", hasAcc: "Є акаунт? Увійти",
+                grantAdmin: "Видати АДМІНА", revokeAdmin: "Зняти АДМІНА", accessDenied: "ДОСТУП ЗАКРИТО 🔒", loginReq: "Увійдіть в акаунт.", loginBtn: "Увійти",
+                langLabel: "Мова", date: "Дата", order: "Замовлення", desc: "Опис", seller: "Продавець", buyer: "Покупець", status: "Статус", sum: "Сума",
+                roleAllmighty: "ВСЕМОГУТНІЙ", roleAdmin: "АДМІН", you: "Ви", regDateText: "ДАТА РЕЄСТРАЦІЇ",
+                notifOn: "Увімкнені сповіщення", notifOff: "Сповіщення вимкнені", report: "Поскаржитися", block: "Заблокувати", blocked: "ЗАБЛОКОВАНО",
+                ticketCreateWarn: "Час очікування збільшено через високе навантаження пекла. Просимо вибачення.",
+                tReason: "Що привело вас сюди?", tReason1: "Проблема із замовленням", tReason2: "Проблема з платежем", tReason3: "Проблема з акаунтом", tReason4: "Інше",
+                tNick: "Ваш нік", tOrder: "Номер замовлення", tRole: "Ви покупець чи продавець?", tText: "Опишіть проблему...", tSubmit: "Відправити скаргу",
+                tNoTickets: "Немає відкритих скарг.", tStatusNew: "Відкрита", tStatusDone: "Вирішена",
+                tTake1: "Написати заявнику", tTake2: "Написати порушнику", tClose: "Закрити скаргу",
+                reportSuccess: "Скаргу успішно надіслано адміністрації.", reportWait: "Ви вже скаржилися на цього користувача нещодавно. Зачекайте 15 днів.", reportTitle: "Скарга на користувача ID "
+            }
         };
 
         const mainCategories = ["🛒 Для покупателей", "🤑 Для продавцов", "💰 Баланс и выплаты", "🔒 Безопасность", "📜 Правила сайта", "🐛 Нашел баг"];
         const buyerCategories = ["🔙 Назад", "❓ Как проходит сделка?", "📦 Способы получения", "💬 Чат с продавцом", "💡 Советы", "💳 Оплата товаров", "✅ Гарантии и возврат", "⭐ Отзывы"];
 
-        function RoleBadge({ role }) {
-            if (role === "Всемогущий") return <span style={{ background: "linear-gradient(45deg, #dc2626, #7f1d1d)", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", marginLeft: "8px", whiteSpace: "nowrap" }}>ВСЕМОГУЩИЙ</span>;
-            if (role === "АДМИН") return <span style={{ background: "#ea580c", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", marginLeft: "8px", whiteSpace: "nowrap" }}>АДМИН</span>;
+        function RoleBadge({ role, lang }) {
+            if (!role || role === "Пользователь") return null;
+            if (role === "Всемогущий") return <span style={{ background: "linear-gradient(45deg, #dc2626, #7f1d1d)", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", boxShadow: "0 0 8px rgba(220,38,38,0.8)", marginLeft: "8px", whiteSpace: "nowrap" }}>{t[lang].roleAllmighty}</span>;
+            if (role === "АДМИН") return <span style={{ background: "#ea580c", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold", marginLeft: "8px", whiteSpace: "nowrap" }}>{t[lang].roleAdmin}</span>;
             return null;
         }
 
         function App() {
             const [usersDatabase, setUsersDatabase] = React.useState([]);
             const [privateMessages, setPrivateMessages] = React.useState([]);
-            const [tickets, setTickets] = React.useState([]);
-            const [ticketMessages, setTicketMessages] = React.useState([]);
+            const [globalReports, setGlobalReports] = React.useState([]);
+            
             const [lang, setLang] = React.useState(() => localStorage.getItem("hellshop_lang") || "ru");
             const [notifsEnabled, setNotifsEnabled] = React.useState(() => localStorage.getItem("hellshop_notifs") === "true");
 
@@ -74,25 +138,23 @@
                 return saved ? JSON.parse(saved) : null;
             });
 
-            // Локальные состояния для чистых чатов
+            // ИЗОЛИРОВАННЫЕ ДАННЫЕ (для чистых чатов новорегов)
             const [chatMessages, setChatMessages] = React.useState([]);
             const [openedChats, setOpenedChats] = React.useState([]);
             const [supportMenu, setSupportMenu] = React.useState("main");
 
-            // Инициализация при входе
             React.useEffect(() => {
                 if (currentUser) {
                     const savedChats = localStorage.getItem("hs_opened_" + currentUser.id);
                     setOpenedChats(savedChats ? JSON.parse(savedChats) : []);
                     const savedMsgs = localStorage.getItem("hs_support_" + currentUser.id);
-                    setChatMessages(savedMsgs ? JSON.parse(savedMsgs) : [{ sender: "Бот", avatar: SUPPORT_AVATAR, text: "Бот поддержки HellShop поможет тебе найти ответ на важные вопросы!\n\nНажимай на кнопки ниже, чтобы выбрать тему своего обращения.", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+                    setChatMessages(savedMsgs ? JSON.parse(savedMsgs) : [{ sender: "Бот", avatar: SUPPORT_AVATAR, text: t[lang].botWelcome, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
                     setSupportMenu(localStorage.getItem("hs_menu_" + currentUser.id) || "main");
                 } else {
                     setOpenedChats([]); setChatMessages([]); setSupportMenu("main");
                 }
-            }, [currentUser?.id]);
+            }, [currentUser?.id, lang]);
 
-            // Сохранение состояний
             React.useEffect(() => {
                 if (currentUser) {
                     localStorage.setItem("hs_opened_" + currentUser.id, JSON.stringify(openedChats));
@@ -100,42 +162,49 @@
                     localStorage.setItem("hs_menu_" + currentUser.id, supportMenu);
                 }
             }, [openedChats, chatMessages, supportMenu, currentUser?.id]);
+
             React.useEffect(() => { localStorage.setItem("hellshop_lang", lang); }, [lang]);
             React.useEffect(() => { localStorage.setItem("hellshop_notifs", notifsEnabled); }, [notifsEnabled]);
 
-            // FIREBASE
+            // FIREBASE & АВТОУДАЛЕНИЕ ЖАЛОБ (12 часов)
             React.useEffect(() => {
                 db.ref('users').on('value', snap => setUsersDatabase(Object.values(snap.val() || {})));
                 db.ref('privateMessages').on('value', snap => setPrivateMessages(Object.values(snap.val() || {})));
-                db.ref('ticketMessages').on('value', snap => setTicketMessages(Object.values(snap.val() || {})));
                 
-                db.ref('tickets').on('value', snap => {
+                db.ref('reports').on('value', snap => {
                     const data = snap.val();
                     if (data) {
                         const now = Date.now();
                         const valid = [];
-                        Object.entries(data).forEach(([key, t]) => {
-                            if (now - t.timestamp > 12 * 60 * 60 * 1000) db.ref('tickets/' + key).remove(); // Автоудаление 12 часов
-                            else valid.push({ ...t, firebaseKey: key });
+                        Object.entries(data).forEach(([key, r]) => {
+                            if (now - r.timestamp > 12 * 60 * 60 * 1000) db.ref('reports/' + key).remove(); // 12 часов
+                            else valid.push({ ...r, firebaseKey: key });
                         });
-                        setTickets(valid.reverse());
-                    } else setTickets([]);
+                        setGlobalReports(valid.reverse());
+                    } else setGlobalReports([]);
                 });
             }, []);
 
-            // Авто-добавление в список чатов
+            // Авто-добавление чатов и пуши
             React.useEffect(() => {
                 if (!currentUser) return;
                 setOpenedChats(prev => {
                     let updated = [...prev];
                     let changed = false;
                     privateMessages.forEach(msg => {
-                        if (msg.toId === currentUser.id && !updated.includes(msg.fromId)) { updated.unshift(msg.fromId); changed = true; }
+                        if (msg.toId === currentUser.id) {
+                            if (!updated.includes(msg.fromId)) { updated.unshift(msg.fromId); changed = true; }
+                            if (notifsEnabled && Notification.permission === "granted" && !msg.notified) {
+                                const sender = usersDatabase.find(u => u.id === msg.fromId);
+                                new Notification(`Новое сообщение`, { body: msg.text, icon: sender ? sender.avatar : DEFAULT_AVATAR });
+                                msg.notified = true; 
+                            }
+                        }
                         if (msg.fromId === currentUser.id && !updated.includes(msg.toId)) { updated.unshift(msg.toId); changed = true; }
                     });
                     return changed ? updated : prev;
                 });
-            }, [privateMessages, currentUser]);
+            }, [privateMessages, currentUser, notifsEnabled, usersDatabase]);
 
             React.useEffect(() => {
                 if (currentUser && usersDatabase.length > 0) {
@@ -154,10 +223,11 @@
                 }
             }, [currentUser]);
 
-            // СОСТОЯНИЯ UI
-            const [activePage, setActivePage] = React.useState("messages"); 
+            // UI СОСТОЯНИЯ
+            const [activePage, setActivePage] = React.useState("main"); 
             const [activeChat, setActiveChat] = React.useState("support"); 
             const [chatMenuOpen, setChatMenuOpen] = React.useState(false); 
+            const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
             const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
             const [authMode, setAuthMode] = React.useState("login");
@@ -165,15 +235,17 @@
             const [inputPassword, setInputPassword] = React.useState("");
             const [typedMessage, setTypedMessage] = React.useState("");
             const [searchQuery, setSearchQuery] = React.useState("");
+            const [inputEmail, setInputEmail] = React.useState("");
+            const [inputPhone, setInputPhone] = React.useState("");
             const [inputAvatar, setInputAvatar] = React.useState("");
 
-            // ТИКЕТЫ & БАЗА ЗНАНИЙ
+            // ЖАЛОБЫ (ТИКЕТЫ)
+            const [reportedUserId, setReportedUserId] = React.useState(null);
             const [ticketCat, setTicketCat] = React.useState("");
             const [ticketOrder, setTicketOrder] = React.useState("");
             const [ticketRole, setTicketRole] = React.useState("buyer");
             const [ticketText, setTicketText] = React.useState("");
             const [activeTicketId, setActiveTicketId] = React.useState(null);
-            const [kbView, setKbView] = React.useState("main"); // main, folder1, article1
 
             const isAdmin = currentUser?.role === "Всемогущий" || currentUser?.role === "АДМИН";
             const isGod = currentUser?.role === "Всемогущий";
@@ -209,7 +281,7 @@
             const handleLogout = () => {
                 if (currentUser) db.ref('users/' + currentUser.id).update({ isOnline: false });
                 setCurrentUser(null); localStorage.removeItem("hellshop_currentUser");
-                setActivePage("messages");
+                setIsDropdownOpen(false); setActivePage("main");
             };
 
             const openUserChat = (userId) => {
@@ -223,26 +295,37 @@
                 const currentBlocked = currentUser.blocked || [];
                 if (!currentBlocked.includes(userId)) {
                     db.ref('users/' + currentUser.id).update({ blocked: [...currentBlocked, userId] });
-                    alert("Пользователь заблокирован.");
+                    alert(t[lang].blocked);
                 }
+            };
+
+            const openReportModal = (userId) => {
+                setReportedUserId(userId);
+                setChatMenuOpen(false);
+                setActivePage("createTicket");
             };
 
             const submitTicket = () => {
                 if (!ticketCat || !ticketText.trim()) return alert("Заполните категорию и описание!");
-                const newTicket = {
-                    id: Date.now().toString(), fromId: currentUser.id, username: currentUser.username,
-                    category: ticketCat, orderNum: ticketOrder, roleType: ticketRole, status: "new", assignee: null,
-                    timestamp: Date.now(), dateStr: new Date().toLocaleDateString('ru-RU', {day: '2-digit', month: 'short'}) + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-                };
-                db.ref('tickets').push(newTicket);
-                db.ref('ticketMessages').push({ ticketId: newTicket.id, sender: currentUser.username, avatar: currentUser.avatar, text: ticketText, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-                alert("Заявка создана!"); setTicketCat(""); setTicketOrder(""); setTicketText(""); setActivePage("tickets");
-            };
+                
+                const now = Date.now();
+                const myReports = globalReports.filter(r => r.fromId === currentUser.id && r.toId === reportedUserId);
+                if (myReports.length > 0) {
+                    const lastReport = myReports[0]; // массив перевернут (reverse), поэтому 0 - это последний
+                    if (now - lastReport.timestamp < 1296000000) { // 15 дней в мс
+                        alert(t[lang].reportWait);
+                        return;
+                    }
+                }
 
-            const sendTicketMsg = () => {
-                if (!typedMessage.trim() || !activeTicketId) return;
-                db.ref('ticketMessages').push({ ticketId: activeTicketId, sender: currentUser.username, avatar: currentUser.avatar, text: typedMessage, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-                setTypedMessage("");
+                const newReport = {
+                    fromId: currentUser.id, username: currentUser.username, toId: reportedUserId,
+                    category: ticketCat, orderNum: ticketOrder, roleType: ticketRole, text: ticketText, status: "new",
+                    timestamp: now, dateStr: new Date().toLocaleDateString('ru-RU', {day: '2-digit', month: 'short'}) + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                };
+                db.ref('reports').push(newReport);
+                alert(t[lang].reportSuccess); 
+                setTicketCat(""); setTicketOrder(""); setTicketText(""); setReportedUserId(null); setActivePage("messages");
             };
 
             const handleSendMessage = (text = typedMessage) => {
@@ -250,24 +333,25 @@
                 const currentTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
                 if (activeChat === "support") {
-                    if (text === "🔙 Назад") { setSupportMenu("main"); return; }
-                    const newMsg = { sender: currentUser ? currentUser.username : "Вы", avatar: currentUser ? currentUser.avatar : DEFAULT_AVATAR, text: text, time: currentTime };
+                    if (text === "🔙 Назад" || text === "🔙 Back") { setSupportMenu("main"); return; }
+                    const newMsg = { sender: currentUser ? currentUser.username : t[lang].you, avatar: currentUser ? currentUser.avatar : DEFAULT_AVATAR, text: text, time: currentTime };
                     let updatedMessages = [...chatMessages, newMsg];
                     let botReplyText = ""; let newMenu = supportMenu;
 
-                    if (text === "🛒 Для покупателей") { botReplyText = "HellShop — это маркетплейс.\nКак купить товар?\n1️⃣ Нажмите «Купить»;\n2️⃣ Выберите способ оплаты;\n3️⃣ Следуйте инструкции."; newMenu = "buyers"; } 
-                    else if (text === "🤑 Для продавцов") { botReplyText = "Хотите начать продавать?\n1. Регистрация.\n2. Создайте объявление.\n3. Ожидайте покупателей!"; } 
-                    else if (text === "💰 Баланс и выплаты") { botReplyText = "Выплаты производятся на карты и крипту."; } 
-                    else if (text === "🔒 Безопасность") { botReplyText = "НИКОГДА не переходите в Telegram. Общайтесь только в чате HellShop."; } 
-                    else if (text === "📜 Правила сайта") { botReplyText = "Нарушение = вечная блокировка."; } 
-                    else if (text === "🐛 Нашел баг") { botReplyText = "Опишите ошибку, мы её исправим."; }
-                    else if (text === "❓ Как проходит сделка?") { botReplyText = "1️⃣ Оплата в резерв.\n2️⃣ Продавец выдаёт товар.\n3️⃣ Подтверждаете заказ."; }
-                    else if (text === "📦 Способы получения") { botReplyText = "Автоматически, через трейд или лично в чате."; }
-                    else if (text === "💬 Чат с продавцом") { botReplyText = "После оплаты откроется чат с продавцом."; }
-                    else if (text === "💡 Советы") { botReplyText = "Снимайте процесс покупки на видео!"; }
-                    else if (text === "💳 Оплата товаров") { botReplyText = "Принимаем карты РФ, мира, СБП и крипту."; }
-                    else if (text === "✅ Гарантии и возврат") { botReplyText = "Спор = возврат денег при обмане."; }
-                    else if (text === "⭐ Отзывы") { botReplyText = "Оставляйте отзывы после сделки!"; }
+                    // Ручная проверка для кнопок поддержки, чтобы избежать сбоев перевода
+                    if (text.includes("покупателей") || text.includes("buyers") || text.includes("покупців")) { botReplyText = t[lang].ans_buyers; newMenu = "buyers"; } 
+                    else if (text.includes("продавцов") || text.includes("sellers") || text.includes("продавців")) { botReplyText = t[lang].ans_sellers; } 
+                    else if (text.includes("Баланс") || text.includes("Balance")) { botReplyText = t[lang].ans_balance; } 
+                    else if (text.includes("Безопасность") || text.includes("Security") || text.includes("Безпека")) { botReplyText = t[lang].ans_security; } 
+                    else if (text.includes("Правила") || text.includes("rules")) { botReplyText = t[lang].ans_rules; } 
+                    else if (text.includes("баг") || text.includes("bug")) { botReplyText = t[lang].ans_bug; }
+                    else if (text.includes("сделка") || text.includes("deal") || text.includes("угода")) { botReplyText = t[lang].ans_how; }
+                    else if (text.includes("Способы") || text.includes("Delivery")) { botReplyText = t[lang].ans_delivery; }
+                    else if (text.includes("Чат") || text.includes("Chat")) { botReplyText = t[lang].ans_chat; }
+                    else if (text.includes("Советы") || text.includes("Tips") || text.includes("Поради")) { botReplyText = t[lang].ans_tips; }
+                    else if (text.includes("Оплата") || text.includes("Payment")) { botReplyText = t[lang].ans_pay; }
+                    else if (text.includes("Гарантии") || text.includes("Guarantees")) { botReplyText = t[lang].ans_guarantee; }
+                    else if (text.includes("Отзывы") || text.includes("Reviews") || text.includes("Відгуки")) { botReplyText = t[lang].ans_reviews; }
 
                     if (botReplyText) updatedMessages.push({ sender: "Бот", avatar: SUPPORT_AVATAR, text: botReplyText, time: currentTime });
                     setChatMessages(updatedMessages); if (newMenu !== supportMenu) setSupportMenu(newMenu);
@@ -284,7 +368,7 @@
                         <thead style={{ backgroundColor: "rgba(40, 0, 0, 0.6)", borderBottom: "1px solid #dc2626" }}>
                             <tr>{headers.map((h, i) => <th key={i} style={{ padding: "15px", color: "#fca5a5" }}>{h}</th>)}</tr>
                         </thead>
-                        <tbody><tr><td colSpan={headers.length} style={{ padding: "30px", textAlign: "center", color: "#888" }}>История пуста.</td></tr></tbody>
+                        <tbody><tr><td colSpan={headers.length} style={{ padding: "30px", textAlign: "center", color: "#888" }}>{t[lang].historyEmpty}</td></tr></tbody>
                     </table>
                 </div>
             );
@@ -292,39 +376,64 @@
             const activeUserObj = typeof activeChat === "number" ? usersDatabase.find(u => u.id === activeChat) : null;
             const blockedByMe = currentUser?.blocked || [];
             const activePrivateMessages = activeUserObj ? privateMessages.filter(m => ((m.fromId === currentUser?.id && m.toId === activeUserObj.id) || (m.fromId === activeUserObj.id && m.toId === currentUser?.id)) && !blockedByMe.includes(m.fromId)) : [];
-            const activeTicketObj = tickets.find(t => t.id === activeTicketId);
-            const activeTicketMsgs = ticketMessages.filter(m => m.ticketId === activeTicketId);
+            const activeTicketObj = activeTicketId ? globalReports.find(r => r.firebaseKey === activeTicketId) : null;
+            
+            const searchResults = searchQuery.trim() ? usersDatabase.filter(u => {
+                const safeUsername = u.username ? u.username.toLowerCase() : "";
+                const safeId = u.id ? u.id.toString() : "";
+                return (safeId.includes(searchQuery) || safeUsername.includes(searchQuery.toLowerCase())) && (!currentUser || u.id !== currentUser.id);
+            }) : [];
 
             return (
                 <div className="bloody-bg">
                     {/* ШАПКА */}
                     <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 30px", height: "70px", backgroundColor: "rgba(10, 0, 0, 0.9)", borderBottom: "2px solid #dc2626", boxShadow: "0 4px 15px rgba(220, 38, 38, 0.2)" }}>
-                        <div onClick={() => setActivePage("messages")} className="neon-text" style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626", cursor: "pointer", letterSpacing: "1px" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
+                        <div onClick={() => setActivePage("main")} className="neon-text" style={{ fontSize: "24px", fontWeight: "900", color: "#dc2626", cursor: "pointer", letterSpacing: "1px" }}>HELL<span style={{ color: "#fff" }}>SHOP</span></div>
 
                         <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
                             <div style={{ display: "flex", gap: "20px", fontSize: "14px", fontWeight: "500" }}>
-                                {["purchases", "sales", "messages", "finances", "kb", "tickets"].map(page => {
-                                    const pageKeys = { purchases: "Покупки", sales: "Продажи", messages: "Сообщения", finances: "Финансы", kb: "База знаний", tickets: "Заявки" };
-                                    const tName = t[lang]?.[page] || pageKeys[page];
-                                    const isActive = activePage === page || (page==='tickets' && (activePage==='createTicket' || activePage==='viewTicket'));
+                                {["purchases", "sales", "messages", "finances"].map(page => {
+                                    const isActive = activePage === page || (page==='messages' && activePage==='createTicket');
                                     return (
-                                        <span key={page} onClick={() => { setActivePage(page); if(page==='tickets') setActiveTicketId(null); if(page==='kb') setKbView('main'); }} style={{ cursor: "pointer", transition: "0.2s", color: isActive ? "#dc2626" : "#a3a3a3", borderBottom: isActive ? "2px solid #dc2626" : "none", paddingBottom: "23px", paddingTop: "25px" }}>
-                                            {tName}
+                                        <span key={page} onClick={() => setActivePage(page)} style={{ cursor: "pointer", transition: "0.2s", color: isActive ? "#dc2626" : "#a3a3a3", borderBottom: isActive ? "2px solid #dc2626" : "none", paddingBottom: "23px", paddingTop: "25px" }}>
+                                            {t[lang][page]}
                                         </span>
                                     )
                                 })}
+                                {/* ПАНЕЛЬ ЗАЯВОК ТОЛЬКО ДЛЯ АДМИНОВ */}
+                                {isAdmin && (
+                                    <span onClick={() => { setActivePage("tickets"); setActiveTicketId(null); }} style={{ cursor: "pointer", transition: "0.2s", color: (activePage === "tickets" || activePage === "viewTicket") ? "#ea580c" : "#a3a3a3", borderBottom: (activePage === "tickets" || activePage === "viewTicket") ? "2px solid #ea580c" : "none", paddingBottom: "23px", paddingTop: "25px", fontWeight: "bold" }}>
+                                        {t[lang].tickets}
+                                    </span>
+                                )}
                             </div>
 
                             <div style={{ position: "relative" }}>
                                 {currentUser ? (
-                                    <div onClick={() => setIsSettingsModalOpen(true)} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                                    <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
                                         <div style={{ position: "relative" }}>
                                             <img src={currentUser.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #dc2626", backgroundColor: "#141414" }} />
                                             <div style={{ position: "absolute", bottom: "0", right: "0", width: "8px", height: "8px", backgroundColor: "#4ade80", borderRadius: "50%", border: "1px solid #141414" }}></div>
                                         </div>
+                                        <span style={{ fontSize: "10px", color: "#dc2626" }}>▼</span>
                                     </div>
                                 ) : (
-                                    <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Войти</button>
+                                    <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }} style={{ backgroundColor: "#dc2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{t[lang].login}</button>
+                                )}
+                                {isDropdownOpen && currentUser && (
+                                    <div style={{ position: "absolute", top: "50px", right: "0", backgroundColor: "rgba(15, 0, 0, 0.95)", border: "1px solid #dc2626", borderRadius: "6px", width: "230px", zIndex: 10, padding: "10px 0", boxShadow: "0 10px 30px rgba(220,38,38,0.3)" }}>
+                                        <div style={{ padding: "5px 15px", display: "flex", alignItems: "center", flexWrap: "nowrap", overflow: "hidden" }}>
+                                            <span style={{ fontWeight: "bold", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100px" }}>{currentUser.username}</span>
+                                            <RoleBadge role={currentUser.role} lang={lang} />
+                                        </div>
+                                        <div style={{ padding: "0 15px 5px 15px", color: "#dc2626", fontSize: "12px", display: "flex", justifyContent: "space-between" }}>
+                                            <span>ID: {currentUser.id}</span>
+                                            <span style={{ color: "#4ade80" }}>{t[lang].online}</span>
+                                        </div>
+                                        <hr style={{ border: "0", borderTop: "1px solid #dc2626", margin: "10px 0", opacity: "0.5" }} />
+                                        <div onClick={() => { setIsSettingsModalOpen(true); setIsDropdownOpen(false); }} style={{ padding: "8px 15px", cursor: "pointer", color: "#e5e5e5" }}>{t[lang].settings}</div>
+                                        <div onClick={handleLogout} style={{ padding: "8px 15px", cursor: "pointer", color: "#ef4444" }}>{t[lang].logout}</div>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -332,107 +441,71 @@
 
                     {/* ОСНОВНОЙ КОНТЕНТ */}
                     <main style={{ padding: "40px 50px", maxWidth: "1200px", margin: "0 auto" }}>
-                        {!currentUser ? (
-                            <div style={{ textAlign: "center", padding: "100px 0" }}><h2 style={{ color: "#dc2626" }}>ДОСТУП ЗАКРЫТ 🔒</h2><button onClick={() => setIsAuthModalOpen(true)} style={{ marginTop: "20px", padding: "10px 20px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Войти в аккаунт</button></div>
+                        {!currentUser && activePage !== "main" ? (
+                            <div style={{ textAlign: "center", padding: "100px 0" }}><h2 style={{ color: "#dc2626" }}>{t[lang].accessDenied}</h2><button onClick={() => setIsAuthModalOpen(true)} style={{ marginTop: "20px", padding: "10px 20px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{t[lang].loginBtn}</button></div>
                         ) : (
                             <>
-                                {activePage === "purchases" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои покупки</h1>{renderTable(["Дата", "Заказ", "Описание", "Продавец", "Статус", "Сумма"])}</div>)}
-                                {activePage === "sales" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Мои продажи</h1>{renderTable(["Дата", "Заказ", "Описание", "Покупатель", "Статус", "Сумма"])}</div>)}
-                                {activePage === "finances" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>Финансы</h1>{renderTable(["Дата", "Описание", "Статус", "Сумма"])}</div>)}
-
-                                {/* БАЗА ЗНАНИЙ */}
-                                {activePage === "kb" && (
-                                    <div>
-                                        <h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>База знаний</h1>
-                                        {kbView === "main" && (
-                                            <div style={{ display: "flex", gap: "20px" }}>
-                                                <div style={{ flex: 1 }}>
-                                                    <h3 style={{ color: "#fff", borderBottom: "1px solid #dc2626", paddingBottom: "10px" }}>Общие вопросы</h3>
-                                                    <div className="kb-folder" onClick={() => setKbView("folder1")}><span>📁 Преимущества, гарантии, информация</span> <span style={{color:"#888", fontSize:"12px"}}>1 статья</span></div>
-                                                    <div className="kb-folder"><span>📁 Совершение покупки</span> <span style={{color:"#888", fontSize:"12px"}}>0 статей</span></div>
-                                                    <div className="kb-folder"><span>📁 Служба поддержки</span> <span style={{color:"#888", fontSize:"12px"}}>0 статей</span></div>
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <h3 style={{ color: "#fff", borderBottom: "1px solid #dc2626", paddingBottom: "10px" }}>Информация для продавцов</h3>
-                                                    <div className="kb-folder"><span>📁 Общая информация</span> <span style={{color:"#888", fontSize:"12px"}}>0 статей</span></div>
-                                                    <div className="kb-folder"><span>📁 Правила</span> <span style={{color:"#888", fontSize:"12px"}}>0 статей</span></div>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {kbView === "folder1" && (
-                                            <div>
-                                                <div onClick={() => setKbView("main")} style={{ color: "#888", cursor: "pointer", marginBottom: "20px" }}>🔙 Назад в Базу знаний</div>
-                                                <h2 style={{ color: "#fff", marginBottom: "20px" }}>Преимущества, гарантии, информация</h2>
-                                                <div className="kb-folder" onClick={() => setKbView("article1")}><span>📄 Абсолютное превосходство</span> <span style={{color:"#888", fontSize:"12px"}}>Обновлено: Сегодня</span></div>
-                                            </div>
-                                        )}
-                                        {kbView === "article1" && (
-                                            <div style={{ backgroundColor: "rgba(10,0,0,0.8)", border: "1px solid #dc2626", borderRadius: "8px", padding: "30px", minHeight: "400px" }}>
-                                                <div onClick={() => setKbView("folder1")} style={{ color: "#888", cursor: "pointer", marginBottom: "20px" }}>🔙 Назад к списку статей</div>
-                                                <h2 style={{ color: "#dc2626", margin: "0 0 20px 0" }}>Абсолютное превосходство</h2>
-                                                <p style={{ color: "#ccc", lineHeight: "1.6", whiteSpace: "pre-line" }}>
-                                                    Так уж вышло, что кто-то торгует пирожками, а кто-то — игровым имуществом. Мы никого не осуждаем, хотя очевиден тот факт, что от пирожков толстеют.<br/><br/>
-                                                    Почему же стоит покупать и продавать именно на HellShop? Ответ прост.<br/><br/>
-                                                    <b>1. Преимущества.</b><br/>
-                                                    Мгновенная доставка прямо в инвентарь ада. Никаких посредников, только чистая сделка.<br/><br/>
-                                                    <b>2. Аудитория.</b><br/>
-                                                    Сюда приходят те, кто знает цену своему времени и ресурсам.<br/><br/>
-                                                    <b>3. Честные отзывы.</b><br/>
-                                                    За любую накрутку мы отправляем в котел без права на апелляцию.
-                                                </p>
-                                            </div>
-                                        )}
+                                {activePage === "main" && (
+                                    <div style={{ textAlign: "center", paddingTop: "50px" }}>
+                                        <h1 className="neon-text" style={{ color: "#dc2626", textTransform: "uppercase", letterSpacing: "2px", margin: 0, fontSize: "36px" }}>{t[lang].appTitle}</h1>
+                                        <p style={{ color: "#fca5a5", marginTop: "15px", fontSize: "18px" }}>{t[lang].appSub}</p>
                                     </div>
                                 )}
 
-                                {/* СОЗДАНИЕ ТИКЕТА */}
+                                {activePage === "purchases" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>{t[lang].purchases}</h1>{renderTable([t[lang].date, t[lang].order, t[lang].desc, t[lang].seller, t[lang].status, t[lang].sum])}</div>)}
+                                {activePage === "sales" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>{t[lang].sales}</h1>{renderTable([t[lang].date, t[lang].order, t[lang].desc, t[lang].buyer, t[lang].status, t[lang].sum])}</div>)}
+                                {activePage === "finances" && (<div><h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#dc2626" }}>{t[lang].finances}</h1>{renderTable([t[lang].date, t[lang].desc, t[lang].status, t[lang].sum])}</div>)}
+
+                                {/* СОЗДАНИЕ ЖАЛОБЫ ИЗ ЧАТА */}
                                 {activePage === "createTicket" && (
                                     <div style={{ maxWidth: "800px", margin: "0 auto", backgroundColor: "rgba(10,0,0,0.8)", padding: "30px", borderRadius: "8px", border: "1px solid #dc2626" }}>
+                                        <h2 style={{ color: "#dc2626", marginTop: 0 }}>{t[lang].reportTitle} {reportedUserId}</h2>
                                         <div style={{ backgroundColor: "rgba(220,38,38,0.1)", color: "#fca5a5", padding: "15px", borderRadius: "4px", marginBottom: "20px", border: "1px solid rgba(220,38,38,0.3)" }}>
-                                            Время ожидания ответа увеличено в связи с высокой загруженностью запросами. Приносим извинения.
+                                            {t[lang].ticketCreateWarn}
                                         </div>
-                                        <h3 style={{ color: "#fff", marginBottom: "10px" }}>Что привело вас сюда? *</h3>
+                                        <h3 style={{ color: "#fff", marginBottom: "10px", fontSize: "15px" }}>{t[lang].tReason} *</h3>
                                         <select value={ticketCat} onChange={e=>setTicketCat(e.target.value)} className="form-input">
-                                            <option value="">Выберите вариант...</option><option value="Проблема с заказом">Проблема с заказом</option>
-                                            <option value="Проблема с платежом">Проблема с платежом</option><option value="Проблема с аккаунтом">Проблема с аккаунтом</option><option value="Другое">Другое</option>
+                                            <option value="">Выберите вариант...</option><option value="Проблема с заказом">{t[lang].tReason1}</option>
+                                            <option value="Проблема с платежом">{t[lang].tReason2}</option><option value="Проблема с аккаунтом">{t[lang].tReason3}</option><option value="Другое">{t[lang].tReason4}</option>
                                         </select>
-                                        <h3 style={{ color: "#fff", marginBottom: "10px" }}>Ваш ник (логин) *</h3>
+                                        <h3 style={{ color: "#fff", marginBottom: "10px", fontSize: "15px" }}>{t[lang].tNick} *</h3>
                                         <input type="text" value={currentUser.username} disabled className="form-input" style={{opacity: 0.7}} />
-                                        <h3 style={{ color: "#fff", marginBottom: "10px" }}>Номер заказа *</h3>
+                                        <h3 style={{ color: "#fff", marginBottom: "10px", fontSize: "15px" }}>{t[lang].tOrder}</h3>
                                         <input type="text" value={ticketOrder} onChange={e=>setTicketOrder(e.target.value)} className="form-input" placeholder="#H44XQHC7" />
-                                        <h3 style={{ color: "#fff", marginBottom: "10px" }}>Вы покупатель или продавец? *</h3>
+                                        <h3 style={{ color: "#fff", marginBottom: "10px", fontSize: "15px" }}>{t[lang].tRole} *</h3>
                                         <div style={{ marginBottom: "20px", color: "#ccc" }}>
-                                            <label style={{ marginRight: "20px", cursor: "pointer" }}><input type="radio" checked={ticketRole==="buyer"} onChange={()=>setTicketRole("buyer")} /> Покупатель</label>
-                                            <label style={{ cursor: "pointer" }}><input type="radio" checked={ticketRole==="seller"} onChange={()=>setTicketRole("seller")} /> Продавец</label>
+                                            <label style={{ marginRight: "20px", cursor: "pointer" }}><input type="radio" checked={ticketRole==="buyer"} onChange={()=>setTicketRole("buyer")} /> {t[lang].buyer}</label>
+                                            <label style={{ cursor: "pointer" }}><input type="radio" checked={ticketRole==="seller"} onChange={()=>setTicketRole("seller")} /> {t[lang].seller}</label>
                                         </div>
-                                        <textarea className="form-input" rows="6" value={ticketText} onChange={e=>setTicketText(e.target.value)} placeholder="Написать комментарий..."></textarea>
-                                        <button onClick={submitTicket} style={{ padding: "12px 25px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Отправить заявку</button>
+                                        <textarea className="form-input" rows="6" value={ticketText} onChange={e=>setTicketText(e.target.value)} placeholder={t[lang].tText}></textarea>
+                                        <div style={{ display: "flex", gap: "10px" }}>
+                                            <button onClick={submitTicket} style={{ padding: "12px 25px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{t[lang].tSubmit}</button>
+                                            <button onClick={() => { setActivePage("messages"); setReportedUserId(null); }} style={{ padding: "12px 25px", backgroundColor: "transparent", color: "#888", border: "1px solid #555", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Отмена</button>
+                                        </div>
                                     </div>
                                 )}
 
-                                {/* СПИСОК ТИКЕТОВ */}
-                                {activePage === "tickets" && (
+                                {/* АДМИНКА - СПИСОК ЖАЛОБ */}
+                                {activePage === "tickets" && isAdmin && (
                                     <div>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                                            <h1 className="neon-text" style={{ margin: 0, color: "#dc2626" }}>Заявки</h1>
-                                            <button onClick={() => setActivePage("createTicket")} style={{ padding: "10px 20px", backgroundColor: "#fff", color: "#000", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Отправить заявку</button>
-                                        </div>
-                                        <div style={{ backgroundColor: "rgba(20, 20, 20, 0.8)", borderRadius: "8px", overflow: "hidden", border: "1px solid #dc2626" }}>
+                                        <h1 className="neon-text" style={{ margin: "0 0 20px 0", color: "#ea580c" }}>{t[lang].tickets} (Admin)</h1>
+                                        <div style={{ backgroundColor: "rgba(20, 20, 20, 0.8)", borderRadius: "8px", overflow: "hidden", border: "1px solid #ea580c" }}>
                                             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
-                                                <thead style={{ backgroundColor: "rgba(40, 0, 0, 0.6)", borderBottom: "1px solid #dc2626" }}>
-                                                    <tr><th style={{ padding: "15px", color: "#fca5a5" }}>Заявка / Тема</th><th style={{ padding: "15px", color: "#fca5a5", width: "150px" }}>Статус</th></tr>
+                                                <thead style={{ backgroundColor: "rgba(40, 0, 0, 0.6)", borderBottom: "1px solid #ea580c" }}>
+                                                    <tr><th style={{ padding: "15px", color: "#fca5a5" }}>Тема / Кто жалуется</th><th style={{ padding: "15px", color: "#fca5a5", width: "150px" }}>На кого</th><th style={{ padding: "15px", color: "#fca5a5", width: "150px" }}>Статус</th></tr>
                                                 </thead>
                                                 <tbody>
-                                                    {(isAdmin ? tickets : tickets.filter(t => t.fromId === currentUser.id)).length === 0 ? (<tr><td colSpan="2" style={{ padding: "30px", textAlign: "center", color: "#888" }}>Заявок нет.</td></tr>) : 
-                                                    (isAdmin ? tickets : tickets.filter(t => t.fromId === currentUser.id)).map((tItem, idx) => (
-                                                        <tr key={idx} onClick={() => { setActiveTicketId(tItem.id); setActivePage("viewTicket"); }} style={{ borderBottom: "1px solid #333", cursor: "pointer" }} className="kb-folder">
+                                                    {globalReports.length === 0 ? (<tr><td colSpan="3" style={{ padding: "30px", textAlign: "center", color: "#888" }}>{t[lang].tNoTickets}</td></tr>) : 
+                                                    globalReports.map((r, idx) => (
+                                                        <tr key={idx} onClick={() => { setActiveTicketId(r.firebaseKey); setActivePage("viewTicket"); }} className="chat-item">
                                                             <td style={{ padding: "15px", color: "#fff" }}>
-                                                                <div style={{ color: "#3b82f6", marginBottom: "5px" }}>Заявка #{tItem.id.slice(-8)} <span style={{color:"#666", fontSize:"12px"}}>- {tItem.dateStr}</span></div>
-                                                                <div>{tItem.category} {isAdmin && <span style={{color:"#ea580c"}}>[от {tItem.username}]</span>}</div>
+                                                                <div style={{ color: "#ea580c", marginBottom: "5px" }}>{r.category} <span style={{color:"#666", fontSize:"12px"}}>- {r.dateStr}</span></div>
+                                                                <div>От: {r.username} <span style={{color:"#888", fontSize:"12px"}}>(ID: {r.fromId})</span></div>
                                                             </td>
+                                                            <td style={{ padding: "15px", color: "#ef4444", fontWeight: "bold" }}>ID: {r.toId}</td>
                                                             <td style={{ padding: "15px" }}>
-                                                                <span style={{ padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", backgroundColor: tItem.status==="new" ? "#374151" : tItem.status==="work" ? "#ca8a04" : "#16a34a", color: "#fff" }}>
-                                                                    {tItem.status === "new" ? "Открыта" : tItem.status === "work" ? "Рассматривается" : "Решена"}
+                                                                <span style={{ padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", backgroundColor: r.status==="new" ? "#374151" : "#16a34a", color: "#fff" }}>
+                                                                    {r.status === "new" ? t[lang].tStatusNew : t[lang].tStatusDone}
                                                                 </span>
                                                             </td>
                                                         </tr>
@@ -443,42 +516,23 @@
                                     </div>
                                 )}
 
-                                {/* ПРОСМОТР ТИКЕТА */}
-                                {activePage === "viewTicket" && activeTicketObj && (
-                                    <div style={{ display: "flex", gap: "20px", height: "700px" }}>
-                                        <div style={{ flex: 2, display: "flex", flexDirection: "column", backgroundColor: "rgba(10,0,0,0.8)", border: "1px solid #dc2626", borderRadius: "8px", overflow: "hidden" }}>
-                                            <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "15px" }}>
-                                                {activeTicketMsgs.map((msg, i) => (
-                                                    <div key={i} style={{ display: "flex", gap: "15px", alignItems: "flex-start", backgroundColor: "rgba(220,38,38,0.05)", padding: "12px", borderRadius: "6px" }}>
-                                                        <img src={msg.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #333" }} />
-                                                        <div>
-                                                            <span style={{ fontWeight: "bold", color: "#fff" }}>{msg.sender}</span> <span style={{ color: "#666", fontSize: "12px", marginLeft: "10px" }}>{msg.time}</span>
-                                                            <p style={{ margin: "5px 0", color: "#ccc", lineHeight: "1.5", whiteSpace: "pre-line" }}>{msg.text}</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <div style={{ padding: "15px", borderTop: "1px solid #dc2626", display: "flex", gap: "10px", backgroundColor: "rgba(0,0,0,0.5)" }}>
-                                                <input type="text" placeholder="Ответить..." value={typedMessage} onChange={(e) => setTypedMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendTicketMsg()} style={{ flex: 1, padding: "12px", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff", borderRadius: "4px", outline: "none" }} />
-                                                <button onClick={sendTicketMsg} style={{ padding: "0 25px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Отправить</button>
-                                            </div>
+                                {/* АДМИНКА - ПРОСМОТР ЖАЛОБЫ (БЕЗ ЧАТА, ТОЛЬКО ИНФО И КНОПКИ) */}
+                                {activePage === "viewTicket" && activeTicketObj && isAdmin && (
+                                    <div style={{ backgroundColor: "rgba(20,20,20,0.9)", border: "1px solid #ea580c", borderRadius: "8px", padding: "30px", maxWidth: "800px", margin: "0 auto", color: "#fff" }}>
+                                        <div onClick={() => setActivePage("tickets")} style={{ color: "#888", cursor: "pointer", marginBottom: "20px" }}>🔙 Назад к списку</div>
+                                        <h2 style={{color: "#ea580c", marginTop: 0}}>Жалоба на пользователя ID {activeTicketObj.toId}</h2>
+                                        <div style={{marginBottom: "10px"}}><span style={{color:"#888"}}>От кого:</span> {activeTicketObj.username} (ID: {activeTicketObj.fromId})</div>
+                                        <div style={{marginBottom: "10px"}}><span style={{color:"#888"}}>Категория:</span> <strong style={{color:"#fff"}}>{activeTicketObj.category}</strong></div>
+                                        <div style={{marginBottom: "10px"}}><span style={{color:"#888"}}>Номер заказа:</span> {activeTicketObj.orderNum || "Не указан"}</div>
+                                        <div style={{marginBottom: "10px"}}><span style={{color:"#888"}}>Роль:</span> {activeTicketObj.roleType === "buyer" ? t[lang].buyer : t[lang].seller}</div>
+                                        <div style={{marginBottom: "20px"}}><span style={{color:"#888"}}>Текст жалобы:</span><br/> 
+                                            <div style={{padding: "15px", backgroundColor: "#0a0a0a", border: "1px solid #333", borderRadius: "4px", marginTop: "10px", whiteSpace: "pre-wrap", lineHeight: "1.5"}}>{activeTicketObj.text}</div>
                                         </div>
-
-                                        <div style={{ flex: 1, backgroundColor: "rgba(20,20,20,0.9)", border: "1px solid #333", borderRadius: "8px", padding: "20px", display: "flex", flexDirection: "column", gap: "20px" }}>
-                                            {isAdmin && (
-                                                <div style={{ display: "flex", gap: "10px" }}>
-                                                    {activeTicketObj.status !== "done" && <button onClick={() => db.ref(`tickets/${activeTicketObj.firebaseKey}`).update({status: "work", assignee: currentUser.username})} style={{ flex:1, padding: "8px", backgroundColor: "transparent", color: "#4ade80", border: "1px solid #4ade80", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Взять в работу</button>}
-                                                    <button onClick={() => db.ref(`tickets/${activeTicketObj.firebaseKey}`).update({status: "done"})} style={{ flex:1, padding: "8px", backgroundColor: "transparent", color: "#ef4444", border: "1px solid #ef4444", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>Закрыть</button>
-                                                </div>
-                                            )}
-                                            <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "#888", fontWeight: "bold" }}>Статус</span><span style={{ padding: "2px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", backgroundColor: activeTicketObj.status==="new" ? "#374151" : activeTicketObj.status==="work" ? "#ca8a04" : "#16a34a", color: "#fff" }}>{activeTicketObj.status === "new" ? "Открыта" : activeTicketObj.status === "work" ? "Рассматривается" : "Решена"}</span></div>
-                                            <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "#888", fontWeight: "bold" }}>Создана</span><span style={{ color: "#ccc" }}>{activeTicketObj.dateStr}</span></div>
-                                            <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "#888", fontWeight: "bold" }}>Ответственный</span><span style={{ color: "#fff", fontWeight: "bold" }}>{activeTicketObj.assignee || <span style={{color:"#ef4444"}}>Ожидает...</span>}</span></div>
-                                            <hr style={{ border: "0", borderTop: "1px solid #333", margin: "0" }} />
-                                            <div><div style={{ color: "#888", fontWeight: "bold", marginBottom: "5px" }}>Ваш ник (логин)</div><div style={{ color: "#fff" }}>{activeTicketObj.username}</div></div>
-                                            <div><div style={{ color: "#888", fontWeight: "bold", marginBottom: "5px" }}>Номер заказа</div><div style={{ color: "#fff" }}>{activeTicketObj.orderNum}</div></div>
-                                            <div><div style={{ color: "#888", fontWeight: "bold", marginBottom: "5px" }}>Вы покупатель или продавец?</div><div style={{ color: "#fff" }}>{activeTicketObj.roleType === "buyer" ? "Покупатель" : "Продавец"}</div></div>
-                                            <div><div style={{ color: "#888", fontWeight: "bold", marginBottom: "5px" }}>Тема заявки</div><div style={{ color: "#fff" }}>{activeTicketObj.category}</div></div>
+                                        
+                                        <div style={{ display: "flex", gap: "10px", marginTop: "30px", flexWrap: "wrap" }}>
+                                            <button onClick={() => openUserChat(activeTicketObj.fromId)} style={{ padding: "10px 20px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{t[lang].tTake1}</button>
+                                            <button onClick={() => openUserChat(activeTicketObj.toId)} style={{ padding: "10px 20px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>{t[lang].tTake2}</button>
+                                            <button onClick={() => { db.ref(`reports/${activeTicketObj.firebaseKey}`).update({status: "done"}); setActivePage("tickets"); }} style={{ padding: "10px 20px", backgroundColor: "#16a34a", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", marginLeft: "auto" }}>{t[lang].tClose}</button>
                                         </div>
                                     </div>
                                 )}
@@ -487,53 +541,53 @@
                                 {activePage === "messages" && (
                                     <div style={{ display: "flex", border: "1px solid #dc2626", borderRadius: "8px", height: "700px", backgroundColor: "rgba(10, 0, 0, 0.8)", overflow: "hidden", boxShadow: "0 0 20px rgba(220,38,38,0.15)" }}>
                                         <div style={{ width: "320px", borderRight: "1px solid #dc2626", overflowY: "auto", backgroundColor: "rgba(0,0,0,0.5)", display: "flex", flexDirection: "column" }}>
-                                            <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #dc2626", color: "#dc2626" }}>Чаты</div>
+                                            <div style={{ padding: "20px", fontSize: "24px", fontWeight: "bold", borderBottom: "1px solid #dc2626", color: "#dc2626" }}>{t[lang].chats}</div>
                                             <div style={{ padding: "10px 15px", borderBottom: "1px solid #333" }}>
                                                 <div style={{ display: "flex", alignItems: "center", backgroundColor: "#0a0a0a", border: "1px solid #dc2626", borderRadius: "4px", padding: "5px 10px" }}>
                                                     <span style={{ color: "#888", marginRight: "8px", fontSize: "14px" }}>🔍</span>
-                                                    <input type="text" placeholder="Найти по ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ background: "transparent", border: "none", color: "#fff", outline: "none", width: "100%", fontSize: "13px" }} />
+                                                    <input type="text" placeholder={t[lang].search} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ background: "transparent", border: "none", color: "#fff", outline: "none", width: "100%", fontSize: "13px" }} />
                                                     {searchQuery && <span onClick={() => setSearchQuery("")} style={{ color: "#dc2626", cursor: "pointer", fontWeight: "bold", marginLeft: "5px" }}>×</span>}
                                                 </div>
                                             </div>
                                             <div style={{ flex: 1, overflowY: "auto" }}>
                                                 {searchQuery.trim() ? (
                                                     <div>
-                                                        <div style={{ padding: "10px 15px", fontSize: "11px", color: "#dc2626", fontWeight: "bold", textTransform: "uppercase" }}>Поиск</div>
+                                                        <div style={{ padding: "10px 15px", fontSize: "11px", color: "#dc2626", fontWeight: "bold", textTransform: "uppercase" }}>{t[lang].globSearch}</div>
                                                         {searchResults.length > 0 ? searchResults.map(u => (
-                                                            <div key={u.id} onClick={() => openUserChat(u.id)} style={{ display: "flex", padding: "15px", cursor: "pointer", borderBottom: "1px solid #333" }} className="kb-folder">
+                                                            <div key={u.id} onClick={() => openUserChat(u.id)} className="chat-item">
                                                                 <div style={{ position: "relative" }}><img src={u.avatar} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #555", objectFit: "cover" }} />{u.isOnline && <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>}</div>
                                                                 <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0 }}>
-                                                                    <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", overflow: "hidden" }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "120px" }}>{u.username}</span><RoleBadge role={u.role} /></div>
+                                                                    <div style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", overflow: "hidden" }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "120px" }}>{u.username}</span><RoleBadge role={u.role} lang={lang} /></div>
                                                                     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><span style={{ color: "#888", fontSize: "12px" }}>ID: {u.id}</span></div>
                                                                 </div>
                                                             </div>
-                                                        )) : (<div style={{ padding: "15px", color: "#888", fontSize: "13px", textAlign: "center" }}>Никого не найдено</div>)}
+                                                        )) : (<div style={{ padding: "15px", color: "#888", fontSize: "13px", textAlign: "center" }}>{t[lang].noRes}</div>)}
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <div onClick={() => setActiveChat("notifications")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "notifications" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
+                                                        <div onClick={() => setActiveChat("notifications")} className="chat-item" style={{ backgroundColor: activeChat === "notifications" ? "rgba(220,38,38,0.1)" : "transparent" }}>
                                                             <img src={NOTIFY_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #facc15" }} />
-                                                            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Уведомления ✔</span><span style={{ fontSize: "13px", color: "#888" }}>Система</span></div>
+                                                            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{t[lang].notif}</span><span style={{ fontSize: "13px", color: "#888" }}>{t[lang].sys}</span></div>
                                                         </div>
-                                                        <div onClick={() => setActiveChat("support")} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === "support" ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
+                                                        <div onClick={() => setActiveChat("support")} className="chat-item" style={{ backgroundColor: activeChat === "support" ? "rgba(220,38,38,0.1)" : "transparent" }}>
                                                             <div style={{ position: "relative" }}><img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} /><div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div></div>
                                                             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>Поддержка ✔</span><span style={{ fontSize: "11px", color: "#4ade80", whiteSpace: "nowrap", marginLeft: "5px" }}>В сети 24/7</span></div>
-                                                                <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Бот поддержки поможет...</div>
+                                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{t[lang].support}</span><span style={{ fontSize: "11px", color: "#4ade80", whiteSpace: "nowrap", marginLeft: "5px" }}>{t[lang].botStatus}</span></div>
+                                                                <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t[lang].botHelp}</div>
                                                             </div>
                                                         </div>
                                                         {openedChats.map(userId => {
                                                             const u = usersDatabase.find(x => x.id === userId);
                                                             if(!u) return null;
                                                             return (
-                                                                <div key={u.id} onClick={() => setActiveChat(u.id)} style={{ display: "flex", padding: "15px", cursor: "pointer", backgroundColor: activeChat === u.id ? "rgba(220,38,38,0.1)" : "transparent", borderBottom: "1px solid #333" }}>
+                                                                <div key={u.id} onClick={() => setActiveChat(u.id)} className="chat-item" style={{ backgroundColor: activeChat === u.id ? "rgba(220,38,38,0.1)" : "transparent" }}>
                                                                     <div style={{ position: "relative" }}><img src={u.avatar} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #555", objectFit: "cover" }} />{u.isOnline && <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>}</div>
                                                                     <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0 }}>
                                                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "3px" }}>
-                                                                            <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "110px" }}>{u.username}</span><RoleBadge role={u.role} /></div>
-                                                                            {u.isOnline && <span style={{ fontSize: "11px", color: "#4ade80", whiteSpace: "nowrap", marginLeft: "5px", flexShrink: 0 }}>В сети</span>}
+                                                                            <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "110px" }}>{u.username}</span><RoleBadge role={u.role} lang={lang} /></div>
+                                                                            {u.isOnline && <span style={{ fontSize: "11px", color: "#4ade80", whiteSpace: "nowrap", marginLeft: "5px", flexShrink: 0 }}>{t[lang].online}</span>}
                                                                         </div>
-                                                                        <span style={{ fontSize: "13px", color: blockedByMe.includes(u.id) ? "#ef4444" : "#888" }}>{blockedByMe.includes(u.id) ? "ЗАБЛОКИРОВАН" : "Личный чат"}</span>
+                                                                        <span style={{ fontSize: "13px", color: blockedByMe.includes(u.id) ? "#ef4444" : "#888" }}>{blockedByMe.includes(u.id) ? t[lang].blocked : t[lang].personal}</span>
                                                                     </div>
                                                                 </div>
                                                             );
@@ -546,14 +600,14 @@
                                         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                                             <div style={{ padding: "15px 20px", borderBottom: "1px solid #dc2626", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "rgba(20,0,0,0.5)" }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: "15px", minWidth: 0 }}>
-                                                    {activeChat === "notifications" && <><img src={NOTIFY_AVATAR} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #facc15" }}/><div><div style={{fontWeight:"bold", color:"#facc15"}}>Уведомления ✔</div><div style={{fontSize:"12px", color:"#888"}}>Система</div></div></>}
-                                                    {activeChat === "support" && <><img src={SUPPORT_AVATAR} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #dc2626" }}/><div><div style={{fontWeight:"bold", color:"#dc2626"}}>Поддержка ✔</div><div style={{fontSize:"12px", color:"#4ade80"}}>В сети 24/7</div></div></>}
+                                                    {activeChat === "notifications" && <><img src={NOTIFY_AVATAR} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #facc15" }}/><div><div style={{fontWeight:"bold", color:"#facc15"}}>{t[lang].notif}</div><div style={{fontSize:"12px", color:"#888"}}>{t[lang].sys}</div></div></>}
+                                                    {activeChat === "support" && <><img src={SUPPORT_AVATAR} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #dc2626" }}/><div><div style={{fontWeight:"bold", color:"#dc2626"}}>{t[lang].support}</div><div style={{fontSize:"12px", color:"#4ade80"}}>{t[lang].botStatus}</div></div></>}
                                                     {typeof activeChat === "number" && activeUserObj && (
                                                         <>
                                                             <img src={activeUserObj.avatar} style={{ width:"40px", height:"40px", borderRadius:"50%", border:"1px solid #555", objectFit:"cover" }}/>
                                                             <div style={{minWidth: 0}}>
-                                                                <div style={{display: "flex", alignItems: "center", minWidth: 0}}><span style={{fontWeight:"bold", color:"#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px"}}>{activeUserObj.username}</span><RoleBadge role={activeUserObj.role} /></div>
-                                                                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}><span style={{fontSize:"12px", color:"#888"}}>ID: {activeUserObj.id}</span>{activeUserObj.isOnline && <span style={{fontSize:"12px", color:"#4ade80"}}>• В сети</span>}</div>
+                                                                <div style={{display: "flex", alignItems: "center", minWidth: 0}}><span style={{fontWeight:"bold", color:"#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px"}}>{activeUserObj.username}</span><RoleBadge role={activeUserObj.role} lang={lang} /></div>
+                                                                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}><span style={{fontSize:"12px", color:"#888"}}>ID: {activeUserObj.id}</span>{activeUserObj.isOnline && <span style={{fontSize:"12px", color:"#4ade80"}}>• {t[lang].online}</span>}</div>
                                                             </div>
                                                         </>
                                                     )}
@@ -563,17 +617,17 @@
                                                     {typeof activeChat === "number" && activeUserObj && (
                                                         <>
                                                             <button onClick={() => { if(!notifsEnabled) { Notification.requestPermission().then(p => { if(p==="granted") setNotifsEnabled(true); }); } else setNotifsEnabled(false); }} style={{ backgroundColor: notifsEnabled ? "rgba(74, 222, 128, 0.2)" : "rgba(255,255,255,0.1)", color: notifsEnabled ? "#4ade80" : "#888", border: notifsEnabled ? "1px solid #4ade80" : "1px solid #555", padding: "6px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}>
-                                                                {notifsEnabled ? `✔ Включены оповещения` : `🔕 Оповещения выключены`}
+                                                                {notifsEnabled ? `✔ ${t[lang].notifOn}` : `🔕 ${t[lang].notifOff}`}
                                                             </button>
                                                             <div style={{ textAlign: "right", fontSize: "11px", color: "#888", borderLeft: "1px solid #333", paddingLeft: "15px" }}>
-                                                                <div style={{textTransform: "uppercase", marginBottom: "2px"}}>Дата регистрации</div><div style={{color: "#ccc"}}>{activeUserObj.regDate || "Неизвестно"}</div>
+                                                                <div style={{textTransform: "uppercase", marginBottom: "2px"}}>{t[lang].regDateText}</div><div style={{color: "#ccc"}}>{activeUserObj.regDate || "Неизвестно"}</div>
                                                             </div>
                                                             <div style={{ position: "relative" }}>
                                                                 <button onClick={() => setChatMenuOpen(!chatMenuOpen)} className="chat-menu-btn" style={{ background: "transparent", color: "#fff", border: "1px solid #555", borderRadius: "4px", padding: "4px 10px", cursor: "pointer", fontSize: "16px" }}>•••</button>
                                                                 {chatMenuOpen && (
                                                                     <div style={{ position: "absolute", top: "100%", right: "0", marginTop: "5px", backgroundColor: "#0a0a0a", border: "1px solid #dc2626", borderRadius: "4px", zIndex: 100, width: "150px", overflow: "hidden" }}>
-                                                                        <div onClick={() => { setActivePage("createTicket"); setChatMenuOpen(false); }} style={{ padding: "10px", color: "#fff", cursor: "pointer", borderBottom: "1px solid #333", fontSize: "13px" }}>⚠️ Пожаловаться</div>
-                                                                        <div onClick={() => handleBlock(activeUserObj.id)} style={{ padding: "10px", color: "#ef4444", cursor: "pointer", fontSize: "13px" }}>🚫 Заблокировать</div>
+                                                                        <div onClick={() => openReportModal(activeUserObj.id)} style={{ padding: "10px", color: "#fff", cursor: "pointer", borderBottom: "1px solid #333", fontSize: "13px" }}>⚠️ {t[lang].report}</div>
+                                                                        <div onClick={() => handleBlock(activeUserObj.id)} style={{ padding: "10px", color: "#ef4444", cursor: "pointer", fontSize: "13px" }}>🚫 {t[lang].block}</div>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -581,16 +635,16 @@
                                                     )}
                                                     {typeof activeChat === "number" && activeUserObj && isGod && activeUserObj.role !== "Всемогущий" && (
                                                         activeUserObj.role === "АДМИН" ? (
-                                                            <button onClick={() => { if(window.confirm("Снять?")) db.ref('users/' + activeUserObj.id).update({role: "Пользователь"}); }} style={{ backgroundColor: "#7f1d1d", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" }}>Снять АДМИНА</button>
+                                                            <button onClick={() => { if(window.confirm("Снять?")) db.ref('users/' + activeUserObj.id).update({role: "Пользователь"}); }} style={{ backgroundColor: "#7f1d1d", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" }}>{t[lang].revokeAdmin}</button>
                                                         ) : (
-                                                            <button onClick={() => { if(window.confirm("Выдать?")) db.ref('users/' + activeUserObj.id).update({role: "АДМИН"}); }} style={{ backgroundColor: "#ea580c", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" }}>Выдать АДМИНА</button>
+                                                            <button onClick={() => { if(window.confirm("Выдать?")) db.ref('users/' + activeUserObj.id).update({role: "АДМИН"}); }} style={{ backgroundColor: "#ea580c", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer" }}>{t[lang].grantAdmin}</button>
                                                         )
                                                     )}
                                                 </div>
                                             </div>
                                             
                                             <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", fontSize: "14px" }}>
-                                                {activeChat === "notifications" && <div style={{ textAlign: "center", color: "#666", paddingTop: "50px" }}>Нет системных уведомлений.</div>}
+                                                {activeChat === "notifications" && <div style={{ textAlign: "center", color: "#666", paddingTop: "50px" }}>{t[lang].noSysNotif}</div>}
                                                 {activeChat === "support" && (
                                                     <>
                                                         {chatMessages.map((msg, i) => (
@@ -612,7 +666,7 @@
                                                         {blockedByMe.includes(activeChat) ? (
                                                             <div style={{ textAlign: "center", color: "#ef4444", paddingTop: "50px", fontWeight: "bold" }}>Вы заблокировали этого пользователя.</div>
                                                         ) : activePrivateMessages.length === 0 ? (
-                                                            <div style={{ textAlign: "center", color: "#666", paddingTop: "50px" }}>Начните переписку с {activeUserObj?.username}</div>
+                                                            <div style={{ textAlign: "center", color: "#666", paddingTop: "50px" }}>{t[lang].startChat} {activeUserObj?.username}</div>
                                                         ) : (
                                                             activePrivateMessages.map((msg) => {
                                                                 const isMe = msg.fromId === currentUser.id;
@@ -634,11 +688,11 @@
                                             
                                             {activeChat !== "notifications" ? (
                                                 <div style={{ padding: "15px", borderTop: "1px solid #dc2626", display: "flex", gap: "10px", backgroundColor: "rgba(0,0,0,0.5)" }}>
-                                                    <input type="text" placeholder="Введите сообщение..." value={typedMessage} onChange={(e) => setTypedMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} disabled={typeof activeChat === "number" && blockedByMe.includes(activeChat)} style={{ flex: 1, padding: "12px", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff", borderRadius: "4px", outline: "none", opacity: typeof activeChat === "number" && blockedByMe.includes(activeChat) ? 0.5 : 1 }} />
-                                                    <button onClick={() => handleSendMessage()} disabled={typeof activeChat === "number" && blockedByMe.includes(activeChat)} style={{ padding: "0 25px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", opacity: typeof activeChat === "number" && blockedByMe.includes(activeChat) ? 0.5 : 1 }}>Отправить</button>
+                                                    <input type="text" placeholder={t[lang].typeMsg} value={typedMessage} onChange={(e) => setTypedMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(typedMessage)} disabled={typeof activeChat === "number" && blockedByMe.includes(activeChat)} style={{ flex: 1, padding: "12px", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff", borderRadius: "4px", outline: "none", opacity: typeof activeChat === "number" && blockedByMe.includes(activeChat) ? 0.5 : 1 }} />
+                                                    <button onClick={() => handleSendMessage(typedMessage)} disabled={typeof activeChat === "number" && blockedByMe.includes(activeChat)} style={{ padding: "0 25px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", opacity: typeof activeChat === "number" && blockedByMe.includes(activeChat) ? 0.5 : 1 }}>{t[lang].send}</button>
                                                 </div>
                                             ) : (
-                                                <div style={{ padding: "15px", borderTop: "1px solid #dc2626", textAlign: "center", color: "#666", fontSize: "13px" }}>Системный чат. Отправка сообщений запрещена.</div>
+                                                <div style={{ padding: "15px", borderTop: "1px solid #dc2626", textAlign: "center", color: "#666", fontSize: "13px" }}>{t[lang].sysLock}</div>
                                             )}
                                         </div>
                                     </div>
@@ -652,28 +706,34 @@
                         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                             <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "12px", width: "400px", border: "1px solid #dc2626", boxShadow: "0 0 30px rgba(220,38,38,0.3)" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-                                    <h3 style={{ margin: 0, color: "#dc2626" }}>Настройки аккаунта</h3>
+                                    <h3 style={{ margin: 0, color: "#dc2626" }}>{t[lang].settings}</h3>
                                     <button onClick={() => setIsSettingsModalOpen(false)} style={{ background: "none", border: "none", color: "#888", fontSize: "20px", cursor: "pointer" }}>×</button>
                                 </div>
                                 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
                                     <div>
-                                        <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "8px" }}>Аватарка профиля</label>
+                                        <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "8px" }}>{t[lang].avatar}</label>
                                         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
                                             <img src={inputAvatar || DEFAULT_AVATAR} style={{ width: "50px", height: "50px", borderRadius: "50%", objectFit: "cover", border: "1px solid #dc2626", backgroundColor: "#141414" }} />
                                             <label style={{ backgroundColor: "#f3f4f6", color: "#111827", padding: "8px 16px", borderRadius: "4px", fontWeight: "bold", fontSize: "13px", cursor: "pointer" }}>
-                                                Изменить
+                                                {t[lang].changeAv}
                                                 <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} />
                                             </label>
                                         </div>
                                     </div>
+                                    <input type="email" value={inputEmail} onChange={(e) => setInputEmail(e.target.value)} placeholder="Email" style={{ width: "100%", padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", boxSizing: "border-box" }} />
+                                    <input type="text" value={inputPhone} onChange={(e) => setInputPhone(e.target.value)} placeholder="Phone" style={{ width: "100%", padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", boxSizing: "border-box" }} />
+                                    
+                                    <div>
+                                        <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "8px" }}>{t[lang].langLabel}</label>
+                                        <select value={lang} onChange={e => setLang(e.target.value)} style={{ width: "100%", padding: "10px", backgroundColor: "#141414", border: "1px solid #333", color: "#fff", outline: "none", cursor: "pointer" }}>
+                                            <option value="ru">Русский 🇷🇺</option><option value="en">English 🇬🇧</option><option value="uk">Українська 🇺🇦</option>
+                                        </select>
+                                    </div>
+
                                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px" }}>
-                                        <button onClick={handleLogout} style={{ padding: "12px", backgroundColor: "transparent", color: "#ef4444", border: "1px solid #ef4444", cursor: "pointer", fontWeight: "bold", borderRadius: "4px" }}>Выйти из аккаунта</button>
-                                        <button onClick={() => {
-                                            const updatedUser = { ...currentUser, avatar: inputAvatar.trim() ? inputAvatar : DEFAULT_AVATAR };
-                                            db.ref('users/' + currentUser.id).update(updatedUser);
-                                            setIsSettingsModalOpen(false);
-                                        }} style={{ padding: "12px", backgroundColor: "#dc2626", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold", borderRadius: "4px" }}>Сохранить</button>
+                                        <button onClick={handleLogout} style={{ padding: "12px", backgroundColor: "transparent", color: "#ef4444", border: "1px solid #ef4444", cursor: "pointer", fontWeight: "bold", borderRadius: "4px" }}>{t[lang].logout}</button>
+                                        <button onClick={handleSaveSettings} style={{ padding: "12px", backgroundColor: "#dc2626", color: "#fff", border: "none", cursor: "pointer", fontWeight: "bold", borderRadius: "4px" }}>{t[lang].save}</button>
                                     </div>
                                 </div>
                             </div>
@@ -684,11 +744,11 @@
                     {isAuthModalOpen && (
                         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
                             <div style={{ backgroundColor: "#0a0a0a", padding: "30px", borderRadius: "8px", width: "320px", border: "1px solid #dc2626" }}>
-                                <h3 style={{ textAlign: "center", color: "#dc2626" }}>{authMode === "login" ? "Авторизация" : "Регистрация"}</h3>
-                                <p style={{ textAlign: "center", fontSize: "12px", color: "#888", cursor: "pointer", textDecoration: "underline" }} onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? "Нет аккаунта? Создать" : "Есть аккаунт? Войти"}</p>
-                                <input type="text" placeholder="Логин" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", boxSizing: "border-box" }} />
-                                <input type="password" placeholder="Пароль" value={inputPassword} onChange={(e) => setInputPassword(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "20px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", boxSizing: "border-box" }} />
-                                <button onClick={handleAuth} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", fontWeight: "bold", cursor: "pointer" }}>{authMode === "login" ? "Войти" : "Продолжить"}</button>
+                                <h3 style={{ textAlign: "center", color: "#dc2626" }}>{authMode === "login" ? t[lang].authTitle : t[lang].regTitle}</h3>
+                                <p style={{ textAlign: "center", fontSize: "12px", color: "#888", cursor: "pointer", textDecoration: "underline" }} onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>{authMode === "login" ? t[lang].noAcc : t[lang].hasAcc}</p>
+                                <input type="text" placeholder="Login" value={inputUsername} onChange={(e) => setInputUsername(e.target.value.toLowerCase())} style={{ width: "100%", padding: "10px", marginBottom: "10px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", boxSizing: "border-box" }} />
+                                <input type="password" placeholder="Password" value={inputPassword} onChange={(e) => setInputPassword(e.target.value)} style={{ width: "100%", padding: "10px", marginBottom: "20px", backgroundColor: "#141414", color: "#fff", border: "1px solid #333", boxSizing: "border-box" }} />
+                                <button onClick={handleAuth} style={{ width: "100%", padding: "10px", backgroundColor: "#dc2626", color: "#fff", border: "none", fontWeight: "bold", cursor: "pointer" }}>{authMode === "login" ? t[lang].login : t[lang].register}</button>
                             </div>
                         </div>
                     )}
