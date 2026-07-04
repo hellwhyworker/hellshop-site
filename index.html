@@ -768,3 +768,92 @@
     </script>
 </body>
 </html>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLSHOP</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23660000'/%3E%3Cpath d='M20 50 L20 30 C20 5, 80 5, 80 30 L80 50 L65 50 L65 70 L55 90 L45 90 L35 70 L35 50 Z' fill='%23141414'/%3E%3Cpath d='M30 45 L45 45 L45 65 L55 65 L55 45 L70 45 L70 55 L55 55 L55 75 L45 75 L45 55 L30 55 Z' fill='%23660000'/%3E%3C/svg%3E">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background-color: #050000; color: #e5e5e5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .bloody-bg { background: linear-gradient(180deg, #1a0000 0%, #050000 100%); min-height: 100vh; }
+        /* Фикс: Модальное окно должно быть всегда сверху и иметь фон */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 999999; }
+        .modal-content { background-color: #1a1a1a; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid #dc2626; color: white; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const firebaseConfig = {
+            apiKey: "AIzaSyAkyn8tkiPyZOBaI0rCTIDAdNGOJjl_dgs",
+            authDomain: "hellshop-132fe.firebaseapp.com",
+            databaseURL: "https://hellshop-132fe-default-rtdb.firebaseio.com",
+            projectId: "hellshop-132fe",
+            storageBucket: "hellshop-132fe.appspot.com",
+            messagingSenderId: "863558594124",
+            appId: "1:863558594124:web:46998a47434e95e7b08ee9"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function App() {
+            const [currentUser, setCurrentUser] = React.useState(() => JSON.parse(localStorage.getItem("hellshop_currentUser")));
+            const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+            const [lang, setLang] = React.useState(() => localStorage.getItem("hellshop_lang") || "ru");
+
+            // Функция выхода
+            const handleLogout = () => {
+                localStorage.removeItem("hellshop_currentUser");
+                window.location.reload();
+            };
+
+            return (
+                <div className="bloody-bg">
+                    {/* Хедер с профилем */}
+                    <header style={{ padding: "20px 40px", display: "flex", justifyContent: "space-between", borderBottom: "1px solid #dc2626" }}>
+                        <div style={{ fontSize: "24px", fontWeight: "bold", color: "#dc2626" }}>HELLSHOP</div>
+                        {currentUser ? (
+                            <div style={{ position: "relative" }}>
+                                <div onClick={() => setIsSettingsOpen(!isSettingsOpen)} style={{ cursor: "pointer", border: "1px solid #dc2626", padding: "5px", borderRadius: "50%" }}>
+                                    Профиль ▼
+                                </div>
+                                {isSettingsOpen && (
+                                    <div style={{ position: "absolute", top: "50px", right: 0, backgroundColor: "#111", border: "1px solid #dc2626", width: "150px", zIndex: 9999 }}>
+                                        <div style={{ padding: "10px", cursor: "pointer" }} onClick={() => { setIsSettingsOpen(false); document.getElementById('settings-modal').style.display = 'flex'; }}>⚙️ Настройки</div>
+                                        <div style={{ padding: "10px", cursor: "pointer", color: "red" }} onClick={handleLogout}>🚪 Выйти</div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : "Гость"}
+                    </header>
+
+                    {/* Настройки - МОДАЛКА (id="settings-modal") */}
+                    <div id="settings-modal" className="modal-overlay" style={{ display: "none" }}>
+                        <div className="modal-content">
+                            <h3>Настройки</h3>
+                            <label>Язык:</label>
+                            <select value={lang} onChange={e => setLang(e.target.value)} style={{ width: "100%", padding: "10px", margin: "10px 0" }}>
+                                <option value="ru">Русский</option>
+                                <option value="en">English</option>
+                                <option value="uk">Українська</option>
+                            </select>
+                            <button onClick={() => document.getElementById('settings-modal').style.display = 'none'} style={{ padding: "10px", width: "100%", backgroundColor: "#dc2626", color: "#fff", border: "none", cursor: "pointer" }}>Закрыть</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
