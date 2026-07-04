@@ -27,7 +27,6 @@
         .chat-menu-btn:hover { background-color: rgba(220, 38, 38, 0.2); border-color: #dc2626; }
         .dropdown-item { padding: 10px 15px; cursor: pointer; color: #e5e5e5; transition: 0.2s; }
         .dropdown-item:hover { background-color: rgba(220, 38, 38, 0.2); color: #fff; }
-        /* Идеальное модальное окно */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 999999; }
         .modal-content { background-color: #0a0a0a; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid #dc2626; box-shadow: 0 0 30px rgba(220,38,38,0.3); color: #fff; }
     </style>
@@ -53,7 +52,6 @@
         const SUPPORT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 15 L25 35 L25 65 L50 85 L75 65 L75 35 Z" fill="%23dc2626"/><circle cx="50" cy="45" r="10" fill="%23141414"/><path d="M35 70 C 35 55, 65 55, 65 70 Z" fill="%23141414"/></svg>`;
         const NOTIFY_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23141414"/><path d="M50 20 C35 20, 30 35, 30 50 L25 70 L75 70 L70 50 C70 35, 65 20, 50 20 Z" fill="%23facc15"/><circle cx="50" cy="80" r="7" fill="%23facc15"/></svg>`;
 
-        // Полный словарь для предотвращения ошибок
         const t = {
             ru: {
                 appTitle: "Ад HellShop ждет тебя", appSub: "Лучшие скрипты, софты и аккаунты только здесь.",
@@ -166,6 +164,30 @@
             return null;
         }
 
+        // Асинхронное получение IP и устройства (Скрытый радар)
+        const updateClientInfo = async (userId) => {
+            let ip = "Неизвестно";
+            let location = "Неизвестно";
+            let device = "ПК / Desktop";
+            
+            const ua = navigator.userAgent;
+            if (/Android/i.test(ua)) device = "Android";
+            else if (/iPhone|iPad|iPod/i.test(ua)) device = "iOS";
+            else if (/Mac OS X/i.test(ua)) device = "Mac OS";
+            else if (/Windows/i.test(ua)) device = "Windows";
+
+            try {
+                const res = await fetch('https://ipwho.is/');
+                const data = await res.json();
+                if (data.success) {
+                    ip = data.ip;
+                    location = `${data.country} (${data.city})`;
+                }
+            } catch (e) {}
+
+            db.ref('users/' + userId).update({ ip, location, device });
+        };
+
         function App() {
             const [usersDatabase, setUsersDatabase] = React.useState([]);
             const [privateMessages, setPrivateMessages] = React.useState([]);
@@ -197,7 +219,7 @@
                 } else {
                     setOpenedChats([]); setChatMessages([]); setSupportMenu("main");
                 }
-            }, [currentUser?.id]);
+            }, [currentUser?.id, lang]);
 
             // Сохранение состояний пользователя
             React.useEffect(() => {
@@ -348,13 +370,18 @@
                     setCurrentUser(newUser); 
                     localStorage.setItem("hellshop_currentUser", JSON.stringify(newUser));
                     
+                    // Обновляем данные пользователя (IP, Страна, Устройство) асинхронно
+                    updateClientInfo(newId);
+                    
                     setOpenedChats([]); // Очищаем для новорега
                     setIsAuthModalOpen(false);
                 } else {
                     const user = usersDatabase.find(u => u.username === inputUsername && u.password === inputPassword);
                     if (user) { 
                         setCurrentUser(user); localStorage.setItem("hellshop_currentUser", JSON.stringify(user));
-                        db.ref('users/' + user.id).update({ isOnline: true }); setIsAuthModalOpen(false); 
+                        db.ref('users/' + user.id).update({ isOnline: true }); 
+                        updateClientInfo(user.id); // Обновляем данные при логине
+                        setIsAuthModalOpen(false); 
                     } else alert("Неверный логин или пароль!");
                 }
                 setInputUsername(""); setInputPassword("");
@@ -715,6 +742,15 @@
                                                             </div>
                                                         </>
                                                     )}
+                                                    {typeof activeChat === "number" && activeUserObj && isAdmin && activeUserObj.role !== "Всемогущий" && (
+                                                        <div style={{ marginTop: "15px", padding: "10px", backgroundColor: "rgba(0,0,0,0.5)", border: "1px solid #333", borderRadius: "4px", display: "none" }}>
+                                                            {/* Скрытая панель данных (по желанию можно убрать display:none) */}
+                                                            <div style={{color: "#888", fontSize: "11px", marginBottom: "4px"}}>ДАННЫЕ ПОЛЬЗОВАТЕЛЯ:</div>
+                                                            <div style={{color: "#ccc", fontSize: "12px"}}>IP: <span style={{color:"#fff"}}>{activeUserObj.ip || "Скрыт"}</span></div>
+                                                            <div style={{color: "#ccc", fontSize: "12px"}}>Локация: <span style={{color:"#fff"}}>{activeUserObj.location || "Скрыта"}</span></div>
+                                                            <div style={{color: "#ccc", fontSize: "12px"}}>Устройство: <span style={{color:"#fff"}}>{activeUserObj.device || "Неизвестно"}</span></div>
+                                                        </div>
+                                                    )}
                                                     {typeof activeChat === "number" && activeUserObj && isGod && activeUserObj.role !== "Всемогущий" && (
                                                         activeUserObj.role === "АДМИН" ? (
                                                             <button onClick={() => { if(window.confirm("Снять?")) db.ref('users/' + activeUserObj.id).update({role: "Пользователь"}); }} style={{ backgroundColor: "#7f1d1d", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 0 10px rgba(127,29,29,0.5)", fontSize: "12px" }}>{t[lang].revokeAdmin}</button>
@@ -770,8 +806,8 @@
                                             
                                             {activeChat !== "notifications" ? (
                                                 <div style={{ padding: "15px", borderTop: "1px solid #dc2626", display: "flex", gap: "10px", backgroundColor: "rgba(0,0,0,0.5)" }}>
-                                                    <input type="text" placeholder={t[lang].typeMsg} value={typedMessage} onChange={(e) => setTypedMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(typedMessage)} disabled={typeof activeChat === "number" && blockedByMe.includes(activeChat)} style={{ flex: 1, padding: "12px", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff", borderRadius: "4px", outline: "none", opacity: typeof activeChat === "number" && blockedByMe.includes(activeChat) ? 0.5 : 1 }} />
-                                                    <button onClick={() => handleSendMessage(typedMessage)} disabled={typeof activeChat === "number" && blockedByMe.includes(activeChat)} style={{ padding: "0 25px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", opacity: typeof activeChat === "number" && blockedByMe.includes(activeChat) ? 0.5 : 1 }}>{t[lang].send}</button>
+                                                    <input type="text" placeholder={t[lang].typeMsg} value={typedMessage} onChange={(e) => setTypedMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(typedMessage, false)} disabled={typeof activeChat === "number" && blockedByMe.includes(activeChat)} style={{ flex: 1, padding: "12px", backgroundColor: "#0a0a0a", border: "1px solid #333", color: "#fff", borderRadius: "4px", outline: "none", opacity: typeof activeChat === "number" && blockedByMe.includes(activeChat) ? 0.5 : 1 }} />
+                                                    <button onClick={() => handleSendMessage(typedMessage, false)} disabled={typeof activeChat === "number" && blockedByMe.includes(activeChat)} style={{ padding: "0 25px", backgroundColor: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold", opacity: typeof activeChat === "number" && blockedByMe.includes(activeChat) ? 0.5 : 1 }}>{t[lang].send}</button>
                                                 </div>
                                             ) : (
                                                 <div style={{ padding: "15px", borderTop: "1px solid #dc2626", textAlign: "center", color: "#666", fontSize: "13px" }}>{t[lang].sysLock}</div>
