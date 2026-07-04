@@ -51,21 +51,17 @@
             .nav-link { padding-top: 10px; padding-bottom: 10px; }
             .page-main { padding: 15px; }
             
-            /* Перестроение чата - список сверху, диалог снизу */
             .chat-layout { flex-direction: column; height: 85vh; }
             .chat-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #dc2626; flex: 0 0 35%; max-height: 35%; }
             .chat-main { flex: 1; height: 65%; }
             
-            /* Перестроение просмотра заявки */
             .ticket-layout { flex-direction: column; height: auto; min-height: 85vh; }
             .ticket-main { height: 50vh; flex: none; }
             .ticket-sidebar { flex: none; height: auto; padding: 15px; }
             
-            /* Инпут сообщений */
             .msg-input-container { flex-direction: column; }
             .msg-input-container button { width: 100%; padding: 12px; }
             
-            /* Шапка диалога в чате */
             .chat-top-bar { flex-wrap: wrap; justify-content: center; text-align: center; gap: 10px; }
             .chat-top-bar > div { flex-wrap: wrap; justify-content: center; }
             .chat-top-actions { justify-content: center; width: 100%; }
@@ -249,7 +245,7 @@
                 } else {
                     setOpenedChats([]); setChatMessages([]); setSupportMenu("main");
                 }
-            }, [currentUser?.id]);
+            }, [currentUser?.id, lang]);
 
             React.useEffect(() => {
                 if (currentUser) {
@@ -262,14 +258,20 @@
             React.useEffect(() => { localStorage.setItem("hellshop_lang", lang); }, [lang]);
             React.useEffect(() => { localStorage.setItem("hellshop_notifs", notifsEnabled); }, [notifsEnabled]);
 
-            // FIREBASE
+            // FIREBASE & АВТОУДАЛЕНИЕ ЖАЛОБ (12 часов)
             React.useEffect(() => {
                 db.ref('users').on('value', snap => {
-                    const data = snap.val(); if (data) setUsersDatabase(Object.values(data)); else setUsersDatabase([]);
+                    const data = snap.val();
+                    if (data) setUsersDatabase(Object.values(data));
+                    else setUsersDatabase([]);
                 });
+
                 db.ref('privateMessages').on('value', snap => {
-                    const data = snap.val(); if (data) setPrivateMessages(Object.values(data)); else setPrivateMessages([]);
+                    const data = snap.val();
+                    if (data) setPrivateMessages(Object.values(data));
+                    else setPrivateMessages([]);
                 });
+                
                 db.ref('reports').on('value', snap => {
                     const data = snap.val();
                     if (data) {
@@ -305,6 +307,7 @@
                 });
             }, [privateMessages, currentUser, notifsEnabled, usersDatabase]);
 
+            // Синхронизация данных текущего юзера
             React.useEffect(() => {
                 if (currentUser && usersDatabase.length > 0) {
                     const updatedMe = usersDatabase.find(u => u.id === currentUser.id);
@@ -351,6 +354,7 @@
             const isAdmin = currentUser?.role === "Всемогущий" || currentUser?.role === "АДМИН";
             const isGod = currentUser?.role === "Всемогущий";
 
+            // Инициализация полей настроек при открытии модалки
             React.useEffect(() => {
                 if (currentUser && isSettingsModalOpen) {
                     setInputEmail(currentUser.email || "");
@@ -372,14 +376,6 @@
                 if (!currentUser) return;
                 const updatedUser = { ...currentUser, email: inputEmail, phone: inputPhone, avatar: inputAvatar.trim() ? inputAvatar : DEFAULT_AVATAR };
                 db.ref('users/' + currentUser.id).update(updatedUser);
-                
-                // Чтобы язык обновился корректно в поддержке, обновляем приветственное сообщение
-                if(chatMessages.length > 0 && chatMessages[0].sender === "Бот") {
-                    let newMsgs = [...chatMessages];
-                    newMsgs[0].text = t[lang].botWelcome;
-                    setChatMessages(newMsgs);
-                }
-
                 setIsSettingsModalOpen(false);
             };
 
@@ -399,16 +395,17 @@
                     setCurrentUser(newUser); 
                     localStorage.setItem("hellshop_currentUser", JSON.stringify(newUser));
                     
+                    // Обновляем данные пользователя (IP, Страна, Устройство) асинхронно
                     updateClientInfo(newId);
-                    setOpenedChats([]);
-                    setChatMessages([{ sender: "Бот", avatar: SUPPORT_AVATAR, text: t[lang].botWelcome, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }]);
+                    
+                    setOpenedChats([]); // Очищаем для новорега
                     setIsAuthModalOpen(false);
                 } else {
                     const user = usersDatabase.find(u => u.username === inputUsername && u.password === inputPassword);
                     if (user) { 
                         setCurrentUser(user); localStorage.setItem("hellshop_currentUser", JSON.stringify(user));
                         db.ref('users/' + user.id).update({ isOnline: true }); 
-                        updateClientInfo(user.id);
+                        updateClientInfo(user.id); // Обновляем данные при логине
                         setIsAuthModalOpen(false); 
                     } else alert("Неверный логин или пароль!");
                 }
@@ -444,11 +441,15 @@
 
             const submitTicket = () => {
                 if (!ticketCat || !ticketText.trim()) return alert("Заполните категорию и описание!");
+                
                 const now = Date.now();
                 const myReports = globalReports.filter(r => r.fromId === currentUser.id && r.toId === reportedUserId);
                 if (myReports.length > 0) {
                     const lastReport = myReports[0]; 
-                    if (now - lastReport.timestamp < 1296000000) { alert(t[lang].reportWait); return; }
+                    if (now - lastReport.timestamp < 1296000000) { 
+                        alert(t[lang].reportWait);
+                        return;
+                    }
                 }
 
                 const newReport = {
@@ -466,14 +467,17 @@
                 const currentTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
                 if (activeChat === "support") {
+                    // Обработка кнопки назад
                     if (text === "cat_back") { setSupportMenu("main"); return; }
                     
+                    // Переводим текст категории для отображения в чате
                     const userText = isCategory ? (t[lang][text] || text) : text;
                     const newMsg = { sender: currentUser ? currentUser.username : t[lang].you, avatar: currentUser ? currentUser.avatar : DEFAULT_AVATAR, text: userText, time: currentTime };
                     let updatedMessages = [...chatMessages, newMsg];
                     let botReplyText = ""; 
                     let newMenu = supportMenu;
 
+                    // Обработка логики по ключам
                     if (isCategory) {
                         if (text === "cat_buyers") newMenu = "buyers";
                         const ansKey = text.replace("cat_", "ans_");
@@ -527,6 +531,7 @@
                                         </span>
                                     )
                                 })}
+                                {/* ПАНЕЛЬ ЗАЯВОК ТОЛЬКО ДЛЯ АДМИНОВ */}
                                 {isAdmin && (
                                     <span className="nav-link" onClick={() => { setActivePage("tickets"); setActiveTicketId(null); }} style={{ color: (activePage === "tickets" || activePage === "viewTicket") ? "#ea580c" : "#a3a3a3", borderBottom: (activePage === "tickets" || activePage === "viewTicket") ? "2px solid #ea580c" : "none", fontWeight: "bold" }}>
                                         {t[lang].tickets} (Admin)
@@ -690,7 +695,7 @@
                                                             <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden" }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{t[lang].notif}</span><span style={{ fontSize: "13px", color: "#888" }}>{t[lang].sys}</span></div>
                                                         </div>
                                                         <div onClick={() => setActiveChat("support")} className="chat-item" style={{ backgroundColor: activeChat === "support" ? "rgba(220,38,38,0.1)" : "transparent" }}>
-                                                            <div style={{ position: "relative" }}><img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626", flexShrink: 0 }} /><div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div></div>
+                                                            <div style={{ position: "relative", flexShrink: 0 }}><img src={SUPPORT_AVATAR} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #dc2626" }} /><div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div></div>
                                                             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                                                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff" }}>{t[lang].support}</span><span style={{ fontSize: "11px", color: "#4ade80", whiteSpace: "nowrap", marginLeft: "5px" }}>{t[lang].botStatus}</span></div>
                                                                 <div style={{ fontSize: "13px", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t[lang].botHelp}</div>
@@ -704,7 +709,7 @@
                                                                     <div style={{ position: "relative", flexShrink: 0 }}><img src={u.avatar} style={{ width: "45px", height: "45px", borderRadius: "50%", marginRight: "15px", border: "1px solid #555", objectFit: "cover" }} />{u.isOnline && <div style={{ position: "absolute", bottom: "0", right: "15px", width: "12px", height: "12px", backgroundColor: "#4ade80", borderRadius: "50%", border: "2px solid #141414" }}></div>}</div>
                                                                     <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0, overflow: "hidden" }}>
                                                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "3px" }}>
-                                                                            <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.username}</span><RoleBadge role={u.role} lang={lang} /></div>
+                                                                            <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}><span style={{ fontWeight: "bold", fontSize: "15px", color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "110px" }}>{u.username}</span><RoleBadge role={u.role} lang={lang} /></div>
                                                                             {u.isOnline && <span style={{ fontSize: "11px", color: "#4ade80", whiteSpace: "nowrap", marginLeft: "5px", flexShrink: 0 }}>{t[lang].online}</span>}
                                                                         </div>
                                                                         <span style={{ fontSize: "13px", color: blockedByMe.includes(u.id) ? "#ef4444" : "#888" }}>{blockedByMe.includes(u.id) ? t[lang].blocked : t[lang].personal}</span>
@@ -737,17 +742,13 @@
                                                     {typeof activeChat === "number" && activeUserObj && (
                                                         <>
                                                             <button onClick={() => { if(!notifsEnabled) { Notification.requestPermission().then(p => { if(p==="granted") setNotifsEnabled(true); }); } else setNotifsEnabled(false); }} style={{ backgroundColor: notifsEnabled ? "rgba(74, 222, 128, 0.2)" : "rgba(255,255,255,0.1)", color: notifsEnabled ? "#4ade80" : "#888", border: notifsEnabled ? "1px solid #4ade80" : "1px solid #555", padding: "6px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", cursor: "pointer", transition: "0.2s" }}>
-                                                                {notifsEnabled ? `✔ ${t[lang].notifOn}` : `🔕 ${t[lang].notifOff}`}
+                                                                {notifsEnabled ? `✔` : `🔕`}
                                                             </button>
                                                             
-                                                            <div style={{ textAlign: "right", fontSize: "11px", color: "#888", borderLeft: "1px solid #333", paddingLeft: "15px", display: "none" }} className="mobile-hide">
-                                                                <div style={{textTransform: "uppercase", marginBottom: "2px"}}>{t[lang].regDateText}</div><div style={{color: "#ccc"}}>{activeUserObj.regDate || "Неизвестно"}</div>
-                                                            </div>
-
                                                             <div style={{ position: "relative" }}>
                                                                 <button onClick={() => setChatMenuOpen(!chatMenuOpen)} className="chat-menu-btn">•••</button>
                                                                 {chatMenuOpen && (
-                                                                    <div style={{ position: "absolute", top: "100%", right: "0", marginTop: "5px", backgroundColor: "#0a0a0a", border: "1px solid #dc2626", borderRadius: "4px", zIndex: 100, width: "150px", overflow: "hidden" }}>
+                                                                    <div style={{ position: "absolute", top: "100%", right: "0", marginTop: "5px", backgroundColor: "#0a0a0a", border: "1px solid #dc2626", borderRadius: "4px", zIndex: 100, width: "150px", overflow: "hidden", textAlign: "left" }}>
                                                                         <div onClick={() => openReportModal(activeUserObj.id)} className="dropdown-item">⚠️ {t[lang].report}</div>
                                                                         <div onClick={() => handleBlock(activeUserObj.id)} className="dropdown-item" style={{color: "#ef4444"}}>🚫 {t[lang].block}</div>
                                                                     </div>
@@ -756,13 +757,13 @@
                                                         </>
                                                     )}
                                                     {typeof activeChat === "number" && activeUserObj && isGod && activeUserObj.role !== "Всемогущий" && (
-                                                        <div style={{ display: "none" }} className="mobile-hide">
+                                                        <>
                                                         {activeUserObj.role === "АДМИН" ? (
                                                             <button onClick={() => { if(window.confirm("Снять?")) db.ref('users/' + activeUserObj.id).update({role: "Пользователь"}); }} style={{ backgroundColor: "#7f1d1d", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 0 10px rgba(127,29,29,0.5)", fontSize: "12px" }}>{t[lang].revokeAdmin}</button>
                                                         ) : (
                                                             <button onClick={() => { if(window.confirm("Выдать?")) db.ref('users/' + activeUserObj.id).update({role: "АДМИН"}); }} style={{ backgroundColor: "#ea580c", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 0 10px rgba(234,88,12,0.5)", fontSize: "12px" }}>{t[lang].grantAdmin}</button>
                                                         )}
-                                                        </div>
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
@@ -800,7 +801,7 @@
                                                                         {!isMe && <img src={senderInfo.avatar} style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover", border: "1px solid #333", flexShrink: 0 }} />}
                                                                         <div>
                                                                             <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}><span style={{ fontWeight: "bold", color: isMe ? "#dc2626" : "#fff" }}>{senderInfo.username}</span><span style={{ color: "#666", fontSize: "11px" }}>{msg.time}</span></div>
-                                                                            <p style={{ margin: "5px 0", color: "#e5e5e5", lineHeight: "1.5" }}>{msg.text}</p>
+                                                                            <p style={{ margin: "5px 0", color: "#e5e5e5", lineHeight: "1.5", wordBreak: "break-word" }}>{msg.text}</p>
                                                                         </div>
                                                                     </div>
                                                                 )
@@ -825,7 +826,7 @@
                         )}
                     </main>
 
-                    {/* МОДАЛКА НАСТРОЕК */}
+                    {/* МОДАЛКА НАСТРОЕК С Z-INDEX: 999999 (НЕ БУДЕТ ЧЕРНОГО ЭКРАНА) */}
                     {isSettingsModalOpen && currentUser && (
                         <div className="modal-overlay" onClick={() => setIsSettingsModalOpen(false)}>
                             <div className="modal-content" onClick={e => e.stopPropagation()}>
